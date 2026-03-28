@@ -9,7 +9,7 @@
 
 const ADMIN_CONFIG = {
   SUPABASE_URL : 'https://wmymjjbmbkdubgzvcvyg.supabase.co',
-  SERVICE_KEY  : 'YOUR_SERVICE_ROLE_KEY',   // Supabase → Settings → API → service_role
+  SERVICE_KEY  : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndteW1qamJtYmtkdWJnenZjdnlnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDM3NTEyMywiZXhwIjoyMDg5OTUxMTIzfQ.epo_yzHjeNrlDiv5tWD7p1rU7fKjmQI03hmBrgwzsaw',   // Supabase → Settings → API → service_role
   ADMIN_PASSWORD: 'worldtv_admin_2025',     // Admin panel paroli
   SESSION_KEY  : 'worldtv_admin_session',
 };
