@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WorldTV Admin — Kirish</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="js/admin.js" defer></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0b0f; --surface: #111318; --surface2: #161820;
+      --border: #1d1f2b; --accent: #6c7bff; --green: #3ddc97;
+      --red: #ff5f6d; --text: #dde1f0; --muted: #5a5f78;
+      --font-ui: 'DM Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--font-ui); min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .login-wrap {
+      width: min(420px, 94vw);
+    }
+
+    /* Logo */
+    .login-logo {
+      display: flex; align-items: center; gap: 12px;
+      justify-content: center; margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 44px; height: 44px; background: var(--accent);
+      border-radius: 12px; display: flex; align-items: center;
+      justify-content: center; font-size: 1.2rem;
+      font-weight: 700; color: #fff;
+    }
+    .logo-name { font-size: 1.4rem; font-weight: 700; }
+    .logo-name span { color: var(--accent); }
+    .logo-badge {
+      font-size: .68rem; background: rgba(108,123,255,.15);
+      color: var(--accent); padding: 3px 8px;
+      border-radius: 4px; font-weight: 600;
+    }
+
+    /* Card */
+    .login-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; padding: 36px;
+    }
+    .login-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 6px; }
+    .login-sub { font-size: .85rem; color: var(--muted); margin-bottom: 28px; }
+
+    /* Form */
+    .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    label { font-size: .78rem; color: var(--muted); font-weight: 500; }
+    .inp {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+      color: var(--text); font-family: var(--font-ui); font-size: .92rem;
+      outline: none; transition: .15s; width: 100%;
+    }
+    .inp:focus { border-color: var(--accent); }
+
+    .btn-login {
+      width: 100%; padding: 13px; border-radius: 10px; border: none;
+      background: var(--accent); color: #fff;
+      font-family: var(--font-ui); font-size: .95rem; font-weight: 600;
+      cursor: pointer; transition: .15s; margin-top: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-login:hover { opacity: .88; }
+    .btn-login:disabled { opacity: .45; cursor: not-allowed; }
+
+    .err-msg {
+      background: rgba(255,95,109,.08); border: 1px solid rgba(255,95,109,.2);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: .83rem; color: var(--red); margin-top: 14px;
+      display: none;
+    }
+
+    /* Show/hide password */
+    .inp-wrap { position: relative; }
+    .inp-wrap .inp { padding-right: 44px; }
+    .show-pwd {
+      position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 1rem;
+      transition: color .15s;
+    }
+    .show-pwd:hover { color: var(--text); }
+
+    /* Footer */
+    .login-footer {
+      text-align: center; margin-top: 20px;
+      font-size: .76rem; color: var(--muted);
+    }
+
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <!-- Logo -->
+  <div class="login-logo">
+    <div class="logo-icon">W</div>
+    <div>
+      <div class="logo-name">World<span>TV</span></div>
+    </div>
+    <span class="logo-badge">Admin</span>
+  </div>
+
+  <!-- Card -->
+  <div class="login-card">
+    <div class="login-title">Xush kelibsiz 👋</div>
+    <div class="login-sub">Admin panelga kirish uchun parolni kiriting</div>
+
+    <div class="form-group">
+      <label for="password">Admin paroli</label>
+      <div class="inp-wrap">
+        <input class="inp" type="password" id="password"
+               placeholder="••••••••••"
+               autocomplete="current-password"/>
+        <button class="show-pwd" onclick="togglePwd()" type="button" id="pwd-toggle">👁️</button>
+      </div>
+    </div>
+
+    <button class="btn-login" id="login-btn" onclick="doLogin()">
+      🔐 Kirish
+    </button>
+
+    <div class="err-msg" id="err-msg">
+      ❌ Noto'g'ri parol. Qayta urinib ko'ring.
+    </div>
+  </div>
+
+  <div class="login-footer">
+    WorldTV Admin Panel &copy; 2025
+  </div>
+</div>
+
+<script>
+  // Allaqachon kirgan bo'lsa — dashboard'ga
+  if (sessionStorage.getItem('worldtv_admin_session') === 'authenticated') {
+    window.location.href = 'index.html';
+  }
+
+  function doLogin() {
+    const pwd    = document.getElementById('password').value;
+    const btn    = document.getElementById('login-btn');
+    const errMsg = document.getElementById('err-msg');
+
+    if (!pwd) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Tekshirilmoqda…';
+    errMsg.style.display = 'none';
+
+    // Bir oz kechikish — brute force'ga qarshi
+    setTimeout(() => {
+      if (adminLogin(pwd)) {
+        btn.innerHTML = '✓ Muvaffaqiyat!';
+        setTimeout(() => { window.location.href = 'index.html'; }, 600);
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = '🔐 Kirish';
+        errMsg.style.display = 'block';
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+      }
+    }, 600);
+  }
+
+  function togglePwd() {
+    const inp = document.getElementById('password');
+    const btn = document.getElementById('pwd-toggle');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      btn.textContent = '🙈';
+    } else {
+      inp.type = 'password';
+      btn.textContent = '👁️';
+    }
+  }
+
+  // Enter tugmasi
+  document.getElementById('password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+</script>
+</body>
+</html>

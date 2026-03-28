@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WorldTV Admin — Obuna narxlari</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <script src="js/admin.js" defer></script>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">W</div>
+    <div class="logo-text">World<span>TV</span></div>
+    <span class="logo-badge">Admin</span>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Asosiy</div>
+    <a class="nav-item" href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <a class="nav-item" href="#"><span class="icon">👥</span> Foydalanuvchilar</a>
+    <a class="nav-item" href="#"><span class="icon">📺</span> Kanallar</a>
+    <a class="nav-item" href="#"><span class="icon">📈</span> Analytics</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Moliya</div>
+    <a class="nav-item" href="subscription-plans.html"><span class="icon">💳</span> Obuna narxlari</a>
+    <a class="nav-item" href="#"><span class="icon">📊</span> Daromadlar</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Tizim</div>
+    <a class="nav-item" href="#"><span class="icon">🔔</span> Bildirishnomalar</a>
+    <a class="nav-item" href="#"><span class="icon">⚙️</span> Sozlamalar</a>
+    <a class="nav-item" href="#"><span class="icon">📝</span> Loglar</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="admin-card">
+      <div class="admin-avatar">A</div>
+      <div>
+        <div class="admin-name">Admin</div>
+        <div class="admin-role">Super Administrator</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="adminLogout()">🚪 Chiqish</button>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div>
+        <div class="topbar-title">Obuna narxlari</div>
+        <div class="topbar-sub">O'zgarishlar mobil ilovada darhol ko'rinadi</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="loadPlans()">↻ Yangilash</button>
+      <div class="topbar-time" id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="stats-bar">
+      <div class="stat-pill"><div class="stat-val blue" id="st-total">—</div><div class="stat-lbl">Jami planlar</div></div>
+      <div class="stat-pill"><div class="stat-val green" id="st-active">—</div><div class="stat-lbl">Faol planlar</div></div>
+      <div class="stat-pill"><div class="stat-val yellow" id="st-min">—</div><div class="stat-lbl">Eng arzon</div></div>
+      <div class="stat-pill"><div class="stat-val" id="st-max" style="color:var(--accent)">—</div><div class="stat-lbl">Eng qimmat</div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-title">➕ Yangi obuna plani qo'shish</div>
+      </div>
+      <div style="padding:24px">
+        <div id="add-msg"></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Plan nomi (UZ) *</label><input class="inp" id="f-name-uz" placeholder="1 oy" oninput="updatePreview()"/></div>
+          <div class="form-group"><label>Plan nomi (EN) *</label><input class="inp" id="f-name-en" placeholder="1 month" oninput="updatePreview()"/></div>
+          <div class="form-group"><label>Plan nomi (TR) *</label><input class="inp" id="f-name-tr" placeholder="1 ay" oninput="updatePreview()"/></div>
+          <div class="form-group"><label>Muddat (kun) *</label><input class="inp" id="f-days" type="number" placeholder="30" min="1" oninput="updatePreview()"/></div>
+          <div class="form-group"><label>Narx (USD) *</label><input class="inp" id="f-price-usd" type="number" step="0.01" placeholder="5.99" min="0" oninput="updatePreview()"/></div>
+          <div class="form-group"><label>Narx (UZS)</label><input class="inp" id="f-price-uzs" type="number" placeholder="74900" min="0" oninput="updatePreview()"/></div>
+          <div class="form-group"><label>Chegirma % (0 = yo'q)</label><input class="inp" id="f-discount" type="number" placeholder="0" min="0" max="99" value="0" oninput="updatePreview()"/></div>
+          <div class="form-group"><label>Tartib raqami</label><input class="inp" id="f-sort" type="number" placeholder="1" min="0" value="0"/></div>
+          <div class="form-group">
+            <div class="checkbox-row"><input type="checkbox" id="f-popular"/><label for="f-popular">⭐ Eng ommabop</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="f-active" checked/><label for="f-active">✓ Faol (ko'rinadigan)</label></div>
+          </div>
+        </div>
+        <div class="price-preview" id="preview-box" style="display:none">
+          <div class="price-preview-title">📱 Mobil ilovada shunday ko'rinadi:</div>
+          <div class="plan-preview-card">
+            <div><div class="plan-preview-name" id="prev-name">—</div><div class="plan-preview-sub" id="prev-days">—</div></div>
+            <div class="plan-preview-price">
+              <div class="plan-preview-usd" id="prev-usd">—</div>
+              <div class="plan-preview-uzs" id="prev-uzs"></div>
+              <div class="plan-preview-discount" id="prev-discount" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="add-btn" onclick="addPlan()">➕ Qo'shish</button>
+          <button class="btn btn-ghost" onclick="clearForm()">✕ Tozalash</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-title">📋 Obuna planlari</div>
+        <span style="font-size:.8rem;color:var(--muted)">O'zgarishlar mobil ilovada <strong style="color:var(--green)">darhol</strong> ko'rinadi</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Plan nomi</th><th>Muddat</th><th>USD narx</th><th>UZS narx</th><th>Chegirma</th><th>Holat</th><th>Amallar</th></tr>
+          </thead>
+          <tbody id="plans-tbody">
+            <tr class="loading-row"><td colspan="7"><span class="spinner"></span> Yuklanmoqda…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ Planni tahrirlash</div>
+    <div id="edit-msg"></div>
+    <input type="hidden" id="e-id"/>
+    <div class="form-grid">
+      <div class="form-group"><label>Plan nomi (UZ)</label><input class="inp" id="e-name-uz" oninput="updateEditPreview()"/></div>
+      <div class="form-group"><label>Plan nomi (EN)</label><input class="inp" id="e-name-en" oninput="updateEditPreview()"/></div>
+      <div class="form-group"><label>Plan nomi (TR)</label><input class="inp" id="e-name-tr" oninput="updateEditPreview()"/></div>
+      <div class="form-group"><label>Muddat (kun)</label><input class="inp" id="e-days" type="number" min="1" oninput="updateEditPreview()"/></div>
+      <div class="form-group"><label>Narx (USD)</label><input class="inp" id="e-price-usd" type="number" step="0.01" min="0" oninput="updateEditPreview()"/></div>
+      <div class="form-group"><label>Narx (UZS)</label><input class="inp" id="e-price-uzs" type="number" min="0" oninput="updateEditPreview()"/></div>
+      <div class="form-group"><label>Chegirma %</label><input class="inp" id="e-discount" type="number" min="0" max="99" oninput="updateEditPreview()"/></div>
+      <div class="form-group"><label>Tartib raqami</label><input class="inp" id="e-sort" type="number" min="0"/></div>
+      <div class="form-group">
+        <div class="checkbox-row"><input type="checkbox" id="e-popular"/><label for="e-popular">⭐ Eng ommabop</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="e-active"/><label for="e-active">✓ Faol</label></div>
+      </div>
+    </div>
+    <div class="price-preview">
+      <div class="price-preview-title">📱 Ko'rinish:</div>
+      <div class="plan-preview-card">
+        <div><div class="plan-preview-name" id="ep-name">—</div><div class="plan-preview-sub" id="ep-days">—</div></div>
+        <div class="plan-preview-price">
+          <div class="plan-preview-usd" id="ep-usd">—</div>
+          <div class="plan-preview-uzs" id="ep-uzs"></div>
+          <div class="plan-preview-discount" id="ep-discount" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="savePlan()">💾 Saqlash</button>
+      <button class="btn btn-ghost" onclick="closeEdit()">Bekor qilish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allPlans = [];
+
+async function loadPlans() {
+  document.getElementById('plans-tbody').innerHTML =
+    '<tr class="loading-row"><td colspan="7"><span class="spinner"></span> Yuklanmoqda…</td></tr>';
+  try {
+    allPlans = await sbFetch('subscription_plans?select=*&order=sort_order.asc,created_at.asc') || [];
+    updateStats(); renderTable();
+  } catch(e) {
+    document.getElementById('plans-tbody').innerHTML =
+      `<tr><td colspan="7" style="color:var(--red);padding:20px">Xatolik: ${e.message}</td></tr>`;
+  }
+}
+
+function updateStats() {
+  const active = allPlans.filter(p=>p.is_active);
+  const prices = allPlans.map(p=>p.price_usd).filter(Boolean);
+  document.getElementById('st-total').textContent  = allPlans.length;
+  document.getElementById('st-active').textContent = active.length;
+  document.getElementById('st-min').textContent    = prices.length ? `$${Math.min(...prices).toFixed(2)}` : '—';
+  document.getElementById('st-max').textContent    = prices.length ? `$${Math.max(...prices).toFixed(2)}` : '—';
+}
+
+function renderTable() {
+  if (!allPlans.length) {
+    document.getElementById('plans-tbody').innerHTML =
+      '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Planlar yo\'q</td></tr>';
+    return;
+  }
+  document.getElementById('plans-tbody').innerHTML = allPlans.map(p=>`
+    <tr>
+      <td>
+        <div style="font-weight:600">${esc(p.name_uz)}</div>
+        <div style="font-size:.73rem;color:var(--muted)">${esc(p.name_en)} · ${esc(p.name_tr)}</div>
+        ${p.is_popular?'<span class="badge badge-popular">⭐ Ommabop</span>':''}
+      </td>
+      <td style="font-family:var(--font-mono)">${p.duration_days} kun</td>
+      <td style="font-weight:700;color:var(--accent)">$${parseFloat(p.price_usd).toFixed(2)}</td>
+      <td style="font-size:.82rem;color:var(--muted)">${Number(p.price_uzs||0).toLocaleString()} so'm</td>
+      <td>${p.discount_percent>0?`<span class="badge badge-discount">-${p.discount_percent}%</span>`:'<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
+      <td>${p.is_active?'<span class="badge badge-active">✓ Faol</span>':'<span class="badge badge-inactive">Nofaol</span>'}</td>
+      <td>
+        <div class="actions-cell">
+          <button class="icon-btn" onclick='openEdit(${JSON.stringify(JSON.stringify(p))})'>✏️</button>
+          <button class="icon-btn" onclick="toggleActive('${p.id}',${p.is_active})">${p.is_active?'🔴':'🟢'}</button>
+          <button class="icon-btn del" onclick="deletePlan('${p.id}','${esc(p.name_uz)}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function addPlan() {
+  const nu=document.getElementById('f-name-uz').value.trim();
+  const ne=document.getElementById('f-name-en').value.trim();
+  const nt=document.getElementById('f-name-tr').value.trim();
+  const d=parseInt(document.getElementById('f-days').value);
+  const u=parseFloat(document.getElementById('f-price-usd').value);
+  clearMsg('add-msg');
+  if(!nu||!ne||!nt||!d||!u){showMsg('add-msg','Barcha majburiy maydonlarni to\'ldiring!',true);return;}
+  const btn=document.getElementById('add-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Saqlanmoqda…';
+  try {
+    await sbFetch('subscription_plans',{method:'POST',body:JSON.stringify({
+      name:nu,name_uz:nu,name_en:ne,name_tr:nt,duration_days:d,price_usd:u,
+      price_uzs:parseFloat(document.getElementById('f-price-uzs').value)||0,
+      discount_percent:parseInt(document.getElementById('f-discount').value)||0,
+      is_popular:document.getElementById('f-popular').checked,
+      is_active:document.getElementById('f-active').checked,
+      sort_order:parseInt(document.getElementById('f-sort').value)||0,
+    })});
+    showMsg('add-msg','✓ Plan muvaffaqiyatli qo\'shildi! Mobil ilovada darhol ko\'rinadi.');
+    clearForm(); loadPlans();
+    setTimeout(()=>clearMsg('add-msg'),4000);
+  } catch(e){showMsg('add-msg','Xatolik: '+e.message,true);}
+  finally{btn.disabled=false;btn.innerHTML='➕ Qo\'shish';}
+}
+
+function clearForm(){
+  ['f-name-uz','f-name-en','f-name-tr','f-days','f-price-usd','f-price-uzs'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('f-discount').value='0';document.getElementById('f-sort').value='0';
+  document.getElementById('f-popular').checked=false;document.getElementById('f-active').checked=true;
+  document.getElementById('preview-box').style.display='none';
+}
+
+function openEdit(js){
+  const p=JSON.parse(js);
+  ['name-uz','name-en','name-tr'].forEach(k=>{document.getElementById(`e-${k}`).value=p[`name_${k.replace('-','')}`]||p.name||'';});
+  document.getElementById('e-days').value=p.duration_days;
+  document.getElementById('e-price-usd').value=p.price_usd;
+  document.getElementById('e-price-uzs').value=p.price_uzs||0;
+  document.getElementById('e-discount').value=p.discount_percent||0;
+  document.getElementById('e-sort').value=p.sort_order||0;
+  document.getElementById('e-popular').checked=p.is_popular;
+  document.getElementById('e-active').checked=p.is_active;
+  document.getElementById('e-id').value=p.id;
+  clearMsg('edit-msg');
+  document.getElementById('edit-modal').classList.add('show');
+  updateEditPreview();
+}
+function closeEdit(){document.getElementById('edit-modal').classList.remove('show');}
+
+async function savePlan(){
+  const id=document.getElementById('e-id').value;
+  clearMsg('edit-msg');
+  try{
+    await sbFetch(`subscription_plans?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({
+      name:document.getElementById('e-name-uz').value.trim(),
+      name_uz:document.getElementById('e-name-uz').value.trim(),
+      name_en:document.getElementById('e-name-en').value.trim(),
+      name_tr:document.getElementById('e-name-tr').value.trim(),
+      duration_days:parseInt(document.getElementById('e-days').value),
+      price_usd:parseFloat(document.getElementById('e-price-usd').value),
+      price_uzs:parseFloat(document.getElementById('e-price-uzs').value)||0,
+      discount_percent:parseInt(document.getElementById('e-discount').value)||0,
+      sort_order:parseInt(document.getElementById('e-sort').value)||0,
+      is_popular:document.getElementById('e-popular').checked,
+      is_active:document.getElementById('e-active').checked,
+      updated_at:new Date().toISOString(),
+    })});
+    showMsg('edit-msg','✓ Saqlandi! Mobil ilovada darhol yangilanadi.');
+    setTimeout(()=>{closeEdit();loadPlans();},1500);
+  }catch(e){showMsg('edit-msg','Xatolik: '+e.message,true);}
+}
+
+async function toggleActive(id,cur){
+  try{await sbFetch(`subscription_plans?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_active:!cur})});loadPlans();}
+  catch(e){alert('Xatolik: '+e.message);}
+}
+
+async function deletePlan(id,name){
+  if(!confirm(`"${name}" planini o'chirishni tasdiqlaysizmi?`))return;
+  try{await sbFetch(`subscription_plans?id=eq.${id}`,{method:'DELETE'});loadPlans();}
+  catch(e){alert('Xatolik: '+e.message);}
+}
+
+function updatePreview(){
+  const name=document.getElementById('f-name-uz').value.trim();
+  const days=document.getElementById('f-days').value;
+  const usd=parseFloat(document.getElementById('f-price-usd').value);
+  const uzs=parseFloat(document.getElementById('f-price-uzs').value);
+  const disc=parseInt(document.getElementById('f-discount').value)||0;
+  if(!name&&!usd){document.getElementById('preview-box').style.display='none';return;}
+  document.getElementById('preview-box').style.display='block';
+  document.getElementById('prev-name').textContent=name||'—';
+  document.getElementById('prev-days').textContent=days?`${days} kun`:'—';
+  document.getElementById('prev-usd').textContent=usd?`$${usd.toFixed(2)}`:'—';
+  document.getElementById('prev-uzs').textContent=uzs?`${uzs.toLocaleString()} so'm`:'';
+  const d=document.getElementById('prev-discount');
+  if(disc>0){d.style.display='inline-block';d.textContent=`-${disc}%`;}else d.style.display='none';
+}
+
+function updateEditPreview(){
+  const name=document.getElementById('e-name-uz').value.trim();
+  const days=document.getElementById('e-days').value;
+  const usd=parseFloat(document.getElementById('e-price-usd').value);
+  const uzs=parseFloat(document.getElementById('e-price-uzs').value);
+  const disc=parseInt(document.getElementById('e-discount').value)||0;
+  document.getElementById('ep-name').textContent=name||'—';
+  document.getElementById('ep-days').textContent=days?`${days} kun`:'—';
+  document.getElementById('ep-usd').textContent=usd?`$${usd.toFixed(2)}`:'—';
+  document.getElementById('ep-uzs').textContent=uzs?`${uzs.toLocaleString()} so'm`:'';
+  const d=document.getElementById('ep-discount');
+  if(disc>0){d.style.display='inline-block';d.textContent=`-${disc}%`;}else d.style.display='none';
+}
+
+document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEdit();});
+document.addEventListener('DOMContentLoaded',loadPlans);
+</script>
+</body>
+</html>
