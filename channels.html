@@ -8,48 +8,43 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/admin.css"/>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@6.11.0/css/flag-icons.min.css"/>
   <script src="js/admin.js" defer></script>
   <script src="js/countries.js"></script>
   <style>
-    .stream-test-btn {
-      padding: 8px 14px; border-radius: 7px;
-      border: 1px solid var(--border);
-      background: var(--surface2); color: var(--muted);
-      font-family: var(--font-ui); font-size: .8rem;
-      cursor: pointer; transition: .15s; white-space: nowrap;
-    }
-    .stream-test-btn:hover { color: var(--green); border-color: var(--green); }
-    .stream-row { display: flex; gap: 8px; align-items: flex-end; }
-    .stream-row .inp { flex: 1; }
-    .thumb-preview {
-      width: 56px; height: 56px; border-radius: 10px;
-      object-fit: contain; background: var(--surface2);
-      border: 1px solid var(--border); display: none;
-    }
-    .logo-row { display: flex; gap: 10px; align-items: flex-end; }
-    .logo-row .form-group { flex: 1; }
-    .filter-bar {
-      display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
-    }
-    .filter-bar .inp { max-width: 220px; }
-    .filter-bar select.inp { max-width: 180px; }
-    .channel-logo {
-      width: 36px; height: 36px; border-radius: 7px;
-      object-fit: contain; background: var(--surface2);
-      border: 1px solid var(--border);
-    }
-    .channel-name-cell { display: flex; align-items: center; gap: 10px; }
-    .url-cell {
-      max-width: 180px; overflow: hidden;
-      text-overflow: ellipsis; white-space: nowrap;
-      font-family: var(--font-mono); font-size: .72rem; color: var(--muted);
-    }
+    .stream-test-btn{padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:var(--font-ui);font-size:.8rem;cursor:pointer;transition:.15s;white-space:nowrap}
+    .stream-test-btn:hover{color:var(--green);border-color:var(--green)}
+    .stream-row{display:flex;gap:8px;align-items:flex-end}
+    .stream-row .inp{flex:1}
+    .thumb-preview{width:56px;height:56px;border-radius:10px;object-fit:contain;background:var(--surface2);border:1px solid var(--border);display:none}
+    .logo-row{display:flex;gap:10px;align-items:flex-end}
+    .logo-row .form-group{flex:1}
+    .filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+    .channel-logo{width:36px;height:36px;border-radius:7px;object-fit:contain;background:var(--surface2);border:1px solid var(--border)}
+    .channel-name-cell{display:flex;align-items:center;gap:10px}
+    .url-cell{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono);font-size:.72rem;color:var(--muted)}
+
+    /* Custom Country Dropdown */
+    .country-wrapper{position:relative}
+    .country-trigger{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;cursor:pointer;font-family:var(--font-ui);font-size:.88rem;color:var(--text);transition:.15s;user-select:none;width:100%}
+    .country-trigger:hover,.country-trigger.open{border-color:var(--accent)}
+    .country-trigger img{width:20px;height:14px;border-radius:2px;object-fit:cover;flex-shrink:0}
+    .ct-arrow{margin-left:auto;color:var(--muted);font-size:.7rem}
+    .country-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+    .country-dropdown.open{display:block}
+    .country-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+    .country-search input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-family:var(--font-ui);font-size:.84rem;outline:none}
+    .country-search input:focus{border-color:var(--accent)}
+    .country-list{max-height:240px;overflow-y:auto}
+    .country-option{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;font-size:.85rem;transition:background .1s}
+    .country-option:hover{background:var(--surface2)}
+    .country-option.selected{background:var(--accent-glow);color:var(--accent)}
+    .country-option img{width:22px;height:15px;border-radius:2px;object-fit:cover;flex-shrink:0}
+    .co-code{font-family:var(--font-mono);font-size:.7rem;color:var(--muted);margin-left:auto}
+    .country-wrapper.sm .country-trigger{padding:7px 10px;font-size:.82rem}
+    .country-wrapper.sm .country-dropdown{min-width:260px}
   </style>
 </head>
 <body>
-
-<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-icon">W</div>
@@ -77,24 +72,17 @@
   <div class="sidebar-footer">
     <div class="admin-card">
       <div class="admin-avatar">A</div>
-      <div>
-        <div class="admin-name">Admin</div>
-        <div class="admin-role">Super Administrator</div>
-      </div>
+      <div><div class="admin-name">Admin</div><div class="admin-role">Super Administrator</div></div>
     </div>
     <button class="logout-btn" onclick="adminLogout()">🚪 Chiqish</button>
   </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="menu-toggle" id="menu-toggle">☰</button>
-      <div>
-        <div class="topbar-title">TV Kanallar</div>
-        <div class="topbar-sub">Kanallarni qo'shish, tahrirlash, o'chirish</div>
-      </div>
+      <div><div class="topbar-title">TV Kanallar</div><div class="topbar-sub">Kanallarni qo'shish, tahrirlash, o'chirish</div></div>
     </div>
     <div class="topbar-right">
       <button class="btn btn-ghost" onclick="loadChannels()">↻ Yangilash</button>
@@ -103,265 +91,161 @@
   </div>
 
   <div class="content">
-
-    <!-- STATS -->
     <div class="stats-bar">
-      <div class="stat-pill">
-        <div class="stat-val blue" id="st-total">—</div>
-        <div class="stat-lbl">Jami kanallar</div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-val green" id="st-active">—</div>
-        <div class="stat-lbl">Faol kanallar</div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-val yellow" id="st-premium">—</div>
-        <div class="stat-lbl">Premium kanallar</div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-val" id="st-new" style="color:var(--red)">—</div>
-        <div class="stat-lbl">Yangi kanallar</div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-val" id="st-countries" style="color:var(--accent)">—</div>
-        <div class="stat-lbl">Davlatlar soni</div>
-      </div>
+      <div class="stat-pill"><div class="stat-val blue" id="st-total">—</div><div class="stat-lbl">Jami kanallar</div></div>
+      <div class="stat-pill"><div class="stat-val green" id="st-active">—</div><div class="stat-lbl">Faol kanallar</div></div>
+      <div class="stat-pill"><div class="stat-val yellow" id="st-premium">—</div><div class="stat-lbl">Premium kanallar</div></div>
+      <div class="stat-pill"><div class="stat-val" id="st-new" style="color:var(--red)">—</div><div class="stat-lbl">Yangi kanallar</div></div>
+      <div class="stat-pill"><div class="stat-val" id="st-countries" style="color:var(--accent)">—</div><div class="stat-lbl">Davlatlar soni</div></div>
     </div>
 
-    <!-- KANAL QO'SHISH -->
     <div class="section-card">
       <div class="section-card-header">
         <div class="section-title">➕ Yangi kanal qo'shish</div>
-        <button class="btn btn-ghost" onclick="toggleAddForm()" id="toggle-form-btn">
-          ▼ Yashirish
-        </button>
+        <button class="btn btn-ghost" onclick="toggleAddForm()" id="toggle-form-btn">▼ Yashirish</button>
       </div>
       <div style="padding:24px" id="add-form-body">
         <div id="add-msg"></div>
         <div class="form-grid">
-
-          <!-- Kanal nomi -->
-          <div class="form-group">
-            <label>Kanal nomi *</label>
-            <input class="inp" id="f-name" placeholder="BBC World News"/>
-          </div>
-
-          <!-- Kategoriya -->
+          <div class="form-group"><label>Kanal nomi *</label><input class="inp" id="f-name" placeholder="BBC World News"/></div>
           <div class="form-group">
             <label>Kategoriya *</label>
             <select class="inp" id="f-category">
               <option value="">— Tanlang —</option>
-              <option value="news">📰 Yangiliklar</option>
-              <option value="sport">⚽ Sport</option>
-              <option value="movies">🎬 Kino</option>
-              <option value="music">🎵 Musiqa</option>
-              <option value="kids">🧒 Bolalar</option>
-              <option value="cooking">🍳 Oshxona</option>
-              <option value="nature">🌿 Tabiat</option>
-              <option value="documentary">🎥 Hujjatli</option>
-              <option value="entertainment">🎭 Ko'ngilochar</option>
-              <option value="religious">🕌 Diniy</option>
-              <option value="business">💼 Biznes</option>
-              <option value="tech">💻 Texnologiya</option>
+              <option value="news">📰 Yangiliklar</option><option value="sport">⚽ Sport</option>
+              <option value="movies">🎬 Kino</option><option value="music">🎵 Musiqa</option>
+              <option value="kids">🧒 Bolalar</option><option value="cooking">🍳 Oshxona</option>
+              <option value="nature">🌿 Tabiat</option><option value="documentary">🎥 Hujjatli</option>
+              <option value="entertainment">🎭 Ko'ngilochar</option><option value="religious">🕌 Diniy</option>
+              <option value="business">💼 Biznes</option><option value="tech">💻 Texnologiya</option>
               <option value="general">📺 Umumiy</option>
             </select>
           </div>
-
-          <!-- Davlat -->
           <div class="form-group">
             <label>Davlat *</label>
-            <select class="inp" id="f-country">
-              <option value="">— Tanlang —</option>
-            </select>
+            <div class="country-wrapper" id="cw-add">
+              <div class="country-trigger" id="ct-add" onclick="toggleDD('add')">
+                <span style="color:var(--muted)">— Tanlang —</span><span class="ct-arrow">▼</span>
+              </div>
+              <div class="country-dropdown" id="cd-add">
+                <div class="country-search"><input type="text" placeholder="🔍 Qidirish..." oninput="filterDD('add',this.value)" onclick="event.stopPropagation()"/></div>
+                <div class="country-list" id="cl-add"></div>
+              </div>
+              <input type="hidden" id="f-country"/>
+            </div>
           </div>
-
-          <!-- Til -->
-          <div class="form-group">
-            <label>Til</label>
-            <input class="inp" id="f-language" placeholder="uz, en, ru, tr..."/>
-          </div>
-
-          <!-- Tartib raqami -->
-          <div class="form-group">
-            <label>Tartib raqami</label>
-            <input class="inp" id="f-sort" type="number" value="0" min="0"/>
-          </div>
-
-          <!-- Checkboxlar -->
+          <div class="form-group"><label>Til</label><input class="inp" id="f-language" placeholder="uz, en, ru, tr..."/></div>
+          <div class="form-group"><label>Tartib raqami</label><input class="inp" id="f-sort" type="number" value="0" min="0"/></div>
           <div class="form-group">
             <label style="opacity:0">.</label>
-            <div class="checkbox-row">
-              <input type="checkbox" id="f-live" checked/>
-              <label for="f-live">📡 Jonli efir (LIVE)</label>
-            </div>
-            <div class="checkbox-row">
-              <input type="checkbox" id="f-new"/>
-              <label for="f-new">🆕 NEW badge ko'rinsin</label>
-            </div>
-            <div class="checkbox-row">
-              <input type="checkbox" id="f-premium"/>
-              <label for="f-premium">⭐ Premium kanal</label>
-            </div>
+            <div class="checkbox-row"><input type="checkbox" id="f-live" checked/><label for="f-live">📡 Jonli efir (LIVE)</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="f-new"/><label for="f-new">🆕 NEW badge ko'rinsin</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="f-premium"/><label for="f-premium">⭐ Premium kanal</label></div>
           </div>
-
-          <!-- Logo URL -->
           <div class="form-group full">
             <label>Logo URL</label>
             <div class="logo-row">
-              <div class="form-group">
-                <input class="inp" id="f-logo"
-                       placeholder="https://example.com/logo.png"
-                       oninput="previewLogo()"/>
-              </div>
+              <div class="form-group"><input class="inp" id="f-logo" placeholder="https://example.com/logo.png" oninput="previewLogo()"/></div>
               <img class="thumb-preview" id="logo-preview" src="" alt="logo"/>
             </div>
           </div>
-
-          <!-- Stream URL -->
           <div class="form-group full">
             <label>Stream URL (m3u8) *</label>
             <div class="stream-row">
-              <input class="inp" id="f-stream"
-                     placeholder="https://example.com/stream.m3u8"/>
-              <button class="stream-test-btn" onclick="testStream()">
-                ▶ Test
-              </button>
+              <input class="inp" id="f-stream" placeholder="https://example.com/stream.m3u8"/>
+              <button class="stream-test-btn" onclick="testStream()">▶ Test</button>
             </div>
             <div id="stream-test-result" style="font-size:.75rem;margin-top:6px"></div>
           </div>
-
         </div>
-
         <div class="btn-row">
-          <button class="btn btn-primary" id="add-btn" onclick="addChannel()">
-            ➕ Kanal qo'shish
-          </button>
+          <button class="btn btn-primary" id="add-btn" onclick="addChannel()">➕ Kanal qo'shish</button>
           <button class="btn btn-ghost" onclick="clearAddForm()">✕ Tozalash</button>
         </div>
       </div>
     </div>
 
-    <!-- KANALLAR JADVALI -->
     <div class="section-card">
-      <div class="section-card-header">
-        <div class="section-title">📋 Kanallar ro'yxati</div>
-      </div>
+      <div class="section-card-header"><div class="section-title">📋 Kanallar ro'yxati</div></div>
       <div style="padding:16px 20px 0">
         <div class="filter-bar">
-          <input class="inp" id="search-input" placeholder="🔍 Kanal nomi..."
-                 oninput="filterTable()"/>
-          <select class="inp" id="filter-country" onchange="filterTable()">
-            <option value="">Barcha davlatlar</option>
-          </select>
-          <select class="inp" id="filter-category" onchange="filterTable()">
+          <input class="inp" id="search-input" placeholder="🔍 Kanal nomi..." oninput="filterTable()" style="max-width:220px"/>
+          <div class="country-wrapper sm" id="cw-filter" style="min-width:200px">
+            <div class="country-trigger" id="ct-filter" onclick="toggleDD('filter')">
+              <span style="color:var(--muted)">Barcha davlatlar</span><span class="ct-arrow">▼</span>
+            </div>
+            <div class="country-dropdown" id="cd-filter">
+              <div class="country-search"><input type="text" placeholder="🔍 Qidirish..." oninput="filterDD('filter',this.value)" onclick="event.stopPropagation()"/></div>
+              <div class="country-list" id="cl-filter"></div>
+            </div>
+            <input type="hidden" id="filter-country"/>
+          </div>
+          <select class="inp" id="filter-category" onchange="filterTable()" style="max-width:180px">
             <option value="">Barcha kategoriyalar</option>
-            <option value="news">📰 Yangiliklar</option>
-            <option value="sport">⚽ Sport</option>
-            <option value="movies">🎬 Kino</option>
-            <option value="music">🎵 Musiqa</option>
-            <option value="kids">🧒 Bolalar</option>
-            <option value="cooking">🍳 Oshxona</option>
-            <option value="nature">🌿 Tabiat</option>
-            <option value="general">📺 Umumiy</option>
+            <option value="news">📰 Yangiliklar</option><option value="sport">⚽ Sport</option>
+            <option value="movies">🎬 Kino</option><option value="music">🎵 Musiqa</option>
+            <option value="kids">🧒 Bolalar</option><option value="general">📺 Umumiy</option>
           </select>
-          <select class="inp" id="filter-type" onchange="filterTable()">
+          <select class="inp" id="filter-type" onchange="filterTable()" style="max-width:160px">
             <option value="">Barcha turlar</option>
-            <option value="premium">⭐ Premium</option>
-            <option value="free">🆓 Bepul</option>
-            <option value="new">🆕 Yangi</option>
+            <option value="premium">⭐ Premium</option><option value="free">🆓 Bepul</option><option value="new">🆕 Yangi</option>
           </select>
         </div>
       </div>
       <div style="overflow-x:auto">
         <table>
-          <thead>
-            <tr>
-              <th>Kanal</th>
-              <th>Kategoriya</th>
-              <th>Davlat</th>
-              <th>Stream URL</th>
-              <th>Holat</th>
-              <th>Amallar</th>
-            </tr>
-          </thead>
-          <tbody id="channels-tbody">
-            <tr class="loading-row">
-              <td colspan="6"><span class="spinner"></span> Yuklanmoqda…</td>
-            </tr>
-          </tbody>
+          <thead><tr><th>Kanal</th><th>Kategoriya</th><th>Davlat</th><th>Stream URL</th><th>Holat</th><th>Amallar</th></tr></thead>
+          <tbody id="channels-tbody"><tr class="loading-row"><td colspan="6"><span class="spinner"></span> Yuklanmoqda…</td></tr></tbody>
         </table>
       </div>
       <div style="padding:12px 20px;font-size:.78rem;color:var(--muted)" id="table-count"></div>
     </div>
-
   </div>
 </div>
 
-<!-- EDIT MODAL -->
 <div class="modal-bg" id="edit-modal">
   <div class="modal">
     <div class="modal-title">✏️ Kanalni tahrirlash</div>
     <div id="edit-msg"></div>
     <input type="hidden" id="e-id"/>
     <div class="form-grid">
-      <div class="form-group">
-        <label>Kanal nomi</label>
-        <input class="inp" id="e-name"/>
-      </div>
+      <div class="form-group"><label>Kanal nomi</label><input class="inp" id="e-name"/></div>
       <div class="form-group">
         <label>Kategoriya</label>
         <select class="inp" id="e-category">
           <option value="">— Tanlang —</option>
-          <option value="news">📰 Yangiliklar</option>
-          <option value="sport">⚽ Sport</option>
-          <option value="movies">🎬 Kino</option>
-          <option value="music">🎵 Musiqa</option>
-          <option value="kids">🧒 Bolalar</option>
-          <option value="cooking">🍳 Oshxona</option>
-          <option value="nature">🌿 Tabiat</option>
-          <option value="documentary">🎥 Hujjatli</option>
-          <option value="entertainment">🎭 Ko'ngilochar</option>
-          <option value="religious">🕌 Diniy</option>
-          <option value="business">💼 Biznes</option>
-          <option value="tech">💻 Texnologiya</option>
+          <option value="news">📰 Yangiliklar</option><option value="sport">⚽ Sport</option>
+          <option value="movies">🎬 Kino</option><option value="music">🎵 Musiqa</option>
+          <option value="kids">🧒 Bolalar</option><option value="cooking">🍳 Oshxona</option>
+          <option value="nature">🌿 Tabiat</option><option value="documentary">🎥 Hujjatli</option>
+          <option value="entertainment">🎭 Ko'ngilochar</option><option value="religious">🕌 Diniy</option>
+          <option value="business">💼 Biznes</option><option value="tech">💻 Texnologiya</option>
           <option value="general">📺 Umumiy</option>
         </select>
       </div>
       <div class="form-group">
         <label>Davlat</label>
-        <select class="inp" id="e-country"></select>
+        <div class="country-wrapper" id="cw-edit">
+          <div class="country-trigger" id="ct-edit" onclick="toggleDD('edit')">
+            <span style="color:var(--muted)">— Tanlang —</span><span class="ct-arrow">▼</span>
+          </div>
+          <div class="country-dropdown" id="cd-edit">
+            <div class="country-search"><input type="text" placeholder="🔍 Qidirish..." oninput="filterDD('edit',this.value)" onclick="event.stopPropagation()"/></div>
+            <div class="country-list" id="cl-edit"></div>
+          </div>
+          <input type="hidden" id="e-country"/>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Til</label>
-        <input class="inp" id="e-language"/>
-      </div>
-      <div class="form-group">
-        <label>Tartib raqami</label>
-        <input class="inp" id="e-sort" type="number"/>
-      </div>
+      <div class="form-group"><label>Til</label><input class="inp" id="e-language"/></div>
+      <div class="form-group"><label>Tartib raqami</label><input class="inp" id="e-sort" type="number"/></div>
       <div class="form-group">
         <label style="opacity:0">.</label>
-        <div class="checkbox-row">
-          <input type="checkbox" id="e-live"/>
-          <label for="e-live">📡 LIVE</label>
-        </div>
-        <div class="checkbox-row">
-          <input type="checkbox" id="e-new"/>
-          <label for="e-new">🆕 NEW badge</label>
-        </div>
-        <div class="checkbox-row">
-          <input type="checkbox" id="e-premium"/>
-          <label for="e-premium">⭐ Premium</label>
-        </div>
+        <div class="checkbox-row"><input type="checkbox" id="e-live"/><label for="e-live">📡 LIVE</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="e-new"/><label for="e-new">🆕 NEW badge</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="e-premium"/><label for="e-premium">⭐ Premium</label></div>
       </div>
-      <div class="form-group full">
-        <label>Logo URL</label>
-        <input class="inp" id="e-logo"/>
-      </div>
-      <div class="form-group full">
-        <label>Stream URL</label>
-        <input class="inp" id="e-stream"/>
-      </div>
+      <div class="form-group full"><label>Logo URL</label><input class="inp" id="e-logo"/></div>
+      <div class="form-group full"><label>Stream URL</label><input class="inp" id="e-stream"/></div>
     </div>
     <div class="btn-row">
       <button class="btn btn-success" onclick="saveChannel()">💾 Saqlash</button>
@@ -370,358 +254,267 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     BARCHA DAVLATLAR RO'YXATI
-═══════════════════════════════════════════ -->
 <script>
-// ─────────────────────────────────────────────
-// Davlatlar dropdownlarini to'ldirish
-// ─────────────────────────────────────────────
+// ── Bayroq URL ──
+function flagUrl(code){ return `https://flagcdn.com/20x15/${code.toLowerCase()}.png`; }
 
-function populateCountryDropdowns() {
-  const selects = ['f-country','e-country','filter-country'];
-  selects.forEach(id => {
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const isFilter = id === 'filter-country';
-    COUNTRIES.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.code;
-      opt.textContent = `${c.flag} ${c.name}`;
-      sel.appendChild(opt);
-    });
+// ── Dropdown state ──
+const ddSel = {add:null, edit:null, filter:null};
+
+function toggleDD(id){
+  const dd=document.getElementById(`cd-${id}`);
+  const tr=document.getElementById(`ct-${id}`);
+  const open=dd.classList.contains('open');
+  ['add','edit','filter'].forEach(k=>{
+    document.getElementById(`cd-${k}`)?.classList.remove('open');
+    document.getElementById(`ct-${k}`)?.classList.remove('open');
   });
-}
-
-// ─────────────────────────────────────────────
-// Kanallarni yuklash
-// ─────────────────────────────────────────────
-
-let allChannels = [];
-let filteredChannels = [];
-
-async function loadChannels() {
-  document.getElementById('channels-tbody').innerHTML =
-    '<tr class="loading-row"><td colspan="6"><span class="spinner"></span> Yuklanmoqda…</td></tr>';
-  try {
-    allChannels = await sbFetch('channels?select=*&order=sort_order.asc,created_at.desc') || [];
-    filteredChannels = [...allChannels];
-    updateStats();
-    renderTable();
-  } catch(e) {
-    document.getElementById('channels-tbody').innerHTML =
-      `<tr><td colspan="6" style="color:var(--red);padding:20px">Xatolik: ${e.message}</td></tr>`;
+  if(!open){
+    dd.classList.add('open'); tr.classList.add('open');
+    const si=dd.querySelector('input[type=text]');
+    if(si){si.value='';renderList(id,COUNTRIES);si.focus();}
   }
 }
 
-function updateStats() {
-  const active   = allChannels.filter(c => c.is_live);
-  const premium  = allChannels.filter(c => c.is_premium);
-  const newCh    = allChannels.filter(c => c.is_new);
-  const countries= new Set(allChannels.map(c => c.country).filter(Boolean));
-  document.getElementById('st-total').textContent    = allChannels.length;
-  document.getElementById('st-active').textContent   = active.length;
-  document.getElementById('st-premium').textContent  = premium.length;
-  document.getElementById('st-new').textContent      = newCh.length;
-  document.getElementById('st-countries').textContent= countries.size;
+function renderList(id,list){
+  const cl=document.getElementById(`cl-${id}`);
+  let html='';
+  if(id==='filter'){
+    html+=`<div class="country-option ${!ddSel[id]?'selected':''}" onclick="pickCountry('filter',null)">
+      <span style="width:22px;text-align:center">🌍</span><span>Barcha davlatlar</span></div>`;
+  }
+  list.forEach(c=>{
+    html+=`<div class="country-option ${ddSel[id]===c.code?'selected':''}" onclick="pickCountry('${id}','${c.code}')">
+      <img src="${flagUrl(c.code)}" alt="${c.code}" onerror="this.style.display='none'"/>
+      <span>${c.name}</span><span class="co-code">${c.code}</span></div>`;
+  });
+  cl.innerHTML=html;
 }
 
-function renderTable() {
-  const tbody = document.getElementById('channels-tbody');
-  document.getElementById('table-count').textContent =
-    `${filteredChannels.length} ta kanal ko'rsatilmoqda`;
+function filterDD(id,q){
+  const list=q?COUNTRIES.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())||c.code.toLowerCase().includes(q.toLowerCase())):COUNTRIES;
+  renderList(id,list);
+}
 
-  if (!filteredChannels.length) {
-    tbody.innerHTML =
-      '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Kanallar topilmadi</td></tr>';
-    return;
+function pickCountry(id,code){
+  ddSel[id]=code;
+  const hid=document.getElementById(id==='filter'?'filter-country':id==='edit'?'e-country':'f-country');
+  const tr=document.getElementById(`ct-${id}`);
+  if(hid) hid.value=code||'';
+  if(!code){
+    tr.innerHTML=`<span style="color:var(--muted)">${id==='filter'?'Barcha davlatlar':'— Tanlang —'}</span><span class="ct-arrow">▼</span>`;
+  } else {
+    const c=COUNTRIES.find(x=>x.code===code);
+    if(c) tr.innerHTML=`<img src="${flagUrl(c.code)}" alt="${c.code}" style="width:20px;height:14px;border-radius:2px;object-fit:cover" onerror="this.style.display='none'"/><span>${c.name}</span><span class="ct-arrow">▼</span>`;
   }
+  document.getElementById(`cd-${id}`).classList.remove('open');
+  document.getElementById(`ct-${id}`).classList.remove('open');
+  if(id==='filter') filterTable();
+}
 
-  tbody.innerHTML = filteredChannels.map(ch => {
-    const country = COUNTRIES.find(c => c.code === ch.country);
-    const flagName = country ? `${country.flag} ${country.name}` : (ch.country || '—');
-    const cats = Array.isArray(ch.categories) ? ch.categories : [];
+document.addEventListener('click',e=>{
+  ['add','edit','filter'].forEach(id=>{
+    const w=document.getElementById(`cw-${id}`);
+    if(w&&!w.contains(e.target)){
+      document.getElementById(`cd-${id}`)?.classList.remove('open');
+      document.getElementById(`ct-${id}`)?.classList.remove('open');
+    }
+  });
+});
 
+function initDropdowns(){ ['add','edit','filter'].forEach(id=>renderList(id,COUNTRIES)); }
+
+// ── Channels ──
+let allChannels=[],filteredChannels=[];
+
+async function loadChannels(){
+  document.getElementById('channels-tbody').innerHTML='<tr class="loading-row"><td colspan="6"><span class="spinner"></span> Yuklanmoqda…</td></tr>';
+  try{
+    allChannels=await sbFetch('channels?select=*&order=sort_order.asc,created_at.desc')||[];
+    filteredChannels=[...allChannels];
+    updateStats(); renderTable();
+  }catch(e){
+    document.getElementById('channels-tbody').innerHTML=`<tr><td colspan="6" style="color:var(--red);padding:20px">Xatolik: ${e.message}</td></tr>`;
+  }
+}
+
+function updateStats(){
+  document.getElementById('st-total').textContent=allChannels.length;
+  document.getElementById('st-active').textContent=allChannels.filter(c=>c.is_live).length;
+  document.getElementById('st-premium').textContent=allChannels.filter(c=>c.is_premium).length;
+  document.getElementById('st-new').textContent=allChannels.filter(c=>c.is_new).length;
+  document.getElementById('st-countries').textContent=new Set(allChannels.map(c=>c.country).filter(Boolean)).size;
+}
+
+function renderTable(){
+  const tbody=document.getElementById('channels-tbody');
+  document.getElementById('table-count').textContent=`${filteredChannels.length} ta kanal ko'rsatilmoqda`;
+  if(!filteredChannels.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Kanallar topilmadi</td></tr>';return;}
+  tbody.innerHTML=filteredChannels.map(ch=>{
+    const co=COUNTRIES.find(c=>c.code===ch.country);
+    const cats=Array.isArray(ch.categories)?ch.categories:[];
+    const fimg=ch.country?`<img src="${flagUrl(ch.country)}" alt="${ch.country}" style="width:18px;height:13px;border-radius:2px;vertical-align:middle;margin-right:5px" onerror="this.style.display='none'"/>`:'';
     return `<tr>
-      <td>
-        <div class="channel-name-cell">
-          <img class="channel-logo"
-               src="${esc(ch.logo_url || '')}"
-               alt="${esc(ch.name)}"
-               onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22><rect width=%2236%22 height=%2236%22 rx=%228%22 fill=%22%23161820%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22 font-size=%2216%22>📺</text></svg>'"/>
-          <div>
-            <div style="font-weight:600">${esc(ch.name)}</div>
-            <div style="font-size:.72rem;color:var(--muted)">${ch.language || '—'}</div>
-          </div>
-        </div>
-      </td>
-      <td>
-        <span style="font-size:.8rem">${cats.length ? cats.join(', ') : '—'}</span>
-      </td>
-      <td style="font-size:.82rem">${flagName}</td>
-      <td>
-        <div class="url-cell" title="${esc(ch.stream_url || '')}">${esc(ch.stream_url || '—')}</div>
-      </td>
-      <td>
-        <div style="display:flex;flex-wrap:wrap;gap:4px">
-          ${ch.is_live    ? '<span class="badge badge-active">📡 LIVE</span>' : ''}
-          ${ch.is_premium ? '<span class="badge badge-popular">⭐ Premium</span>' : ''}
-          ${ch.is_new     ? '<span class="badge" style="background:rgba(255,95,109,.12);color:var(--red)">🆕 NEW</span>' : ''}
-          ${!ch.is_live && !ch.is_premium && !ch.is_new ? '<span class="badge badge-inactive">Oddiy</span>' : ''}
-        </div>
-      </td>
-      <td>
-        <div class="actions-cell">
-          <button class="icon-btn" onclick='openEdit(${JSON.stringify(JSON.stringify(ch))})' title="Tahrirlash">✏️</button>
-          <button class="icon-btn" onclick="toggleLive('${ch.id}',${ch.is_live})" title="${ch.is_live?'O\'chirish':'Yoqish'}">
-            ${ch.is_live ? '🔴' : '🟢'}
-          </button>
-          <button class="icon-btn del" onclick="deleteChannel('${ch.id}','${esc(ch.name)}')" title="O'chirish">🗑️</button>
-        </div>
-      </td>
+      <td><div class="channel-name-cell">
+        <img class="channel-logo" src="${esc(ch.logo_url||'')}" alt="${esc(ch.name)}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22><rect width=%2236%22 height=%2236%22 rx=%228%22 fill=%22%23161820%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22 font-size=%2216%22>📺</text></svg>'"/>
+        <div><div style="font-weight:600">${esc(ch.name)}</div><div style="font-size:.72rem;color:var(--muted)">${ch.language||'—'}</div></div>
+      </div></td>
+      <td><span style="font-size:.8rem">${cats.length?cats.join(', '):'—'}</span></td>
+      <td style="font-size:.82rem">${fimg}${co?co.name:(ch.country||'—')}</td>
+      <td><div class="url-cell" title="${esc(ch.stream_url||'')}">${esc(ch.stream_url||'—')}</div></td>
+      <td><div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${ch.is_live?'<span class="badge badge-active">📡 LIVE</span>':''}
+        ${ch.is_premium?'<span class="badge badge-popular">⭐ Premium</span>':''}
+        ${ch.is_new?'<span class="badge" style="background:rgba(255,95,109,.12);color:var(--red)">🆕 NEW</span>':''}
+        ${!ch.is_live&&!ch.is_premium&&!ch.is_new?'<span class="badge badge-inactive">Oddiy</span>':''}
+      </div></td>
+      <td><div class="actions-cell">
+        <button class="icon-btn" onclick='openEdit(${JSON.stringify(JSON.stringify(ch))})'>✏️</button>
+        <button class="icon-btn" onclick="toggleLive('${ch.id}',${ch.is_live})">${ch.is_live?'🔴':'🟢'}</button>
+        <button class="icon-btn del" onclick="deleteChannel('${ch.id}','${esc(ch.name)}')">🗑️</button>
+      </div></td>
     </tr>`;
   }).join('');
 }
 
-// ─────────────────────────────────────────────
-// Filter
-// ─────────────────────────────────────────────
-
-function filterTable() {
-  const search   = document.getElementById('search-input').value.toLowerCase();
-  const country  = document.getElementById('filter-country').value;
-  const category = document.getElementById('filter-category').value;
-  const type     = document.getElementById('filter-type').value;
-
-  filteredChannels = allChannels.filter(ch => {
-    const matchName    = !search   || ch.name.toLowerCase().includes(search);
-    const matchCountry = !country  || ch.country === country;
-    const cats = Array.isArray(ch.categories) ? ch.categories : [];
-    const matchCat     = !category || cats.includes(category);
-    const matchType    = !type     ||
-      (type === 'premium' && ch.is_premium) ||
-      (type === 'free'    && !ch.is_premium) ||
-      (type === 'new'     && ch.is_new);
-    return matchName && matchCountry && matchCat && matchType;
+function filterTable(){
+  const s=document.getElementById('search-input').value.toLowerCase();
+  const co=document.getElementById('filter-country').value;
+  const ca=document.getElementById('filter-category').value;
+  const ty=document.getElementById('filter-type').value;
+  filteredChannels=allChannels.filter(ch=>{
+    const cats=Array.isArray(ch.categories)?ch.categories:[];
+    return (!s||ch.name.toLowerCase().includes(s))&&
+           (!co||ch.country===co)&&
+           (!ca||cats.includes(ca))&&
+           (!ty||(ty==='premium'&&ch.is_premium)||(ty==='free'&&!ch.is_premium)||(ty==='new'&&ch.is_new));
   });
   renderTable();
 }
 
-// ─────────────────────────────────────────────
-// Kanal qo'shish
-// ─────────────────────────────────────────────
-
-async function addChannel() {
-  const name   = document.getElementById('f-name').value.trim();
-  const stream = document.getElementById('f-stream').value.trim();
-  const cat    = document.getElementById('f-category').value;
-
+async function addChannel(){
+  const name=document.getElementById('f-name').value.trim();
+  const stream=document.getElementById('f-stream').value.trim();
+  const cat=document.getElementById('f-category').value;
   clearMsg('add-msg');
-  if (!name || !stream) {
-    showMsg('add-msg', 'Kanal nomi va Stream URL majburiy!', true);
-    return;
-  }
-
-  const btn = document.getElementById('add-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Saqlanmoqda…';
-
-  try {
-    const country = document.getElementById('f-country').value;
-    const ctObj   = COUNTRIES.find(c => c.code === country);
-
-    await sbFetch('channels', {
-      method: 'POST',
-      body: JSON.stringify({
-        name        : name,
-        stream_url  : stream,
-        logo_url    : document.getElementById('f-logo').value.trim(),
-        country     : country,
-        country_flag: ctObj ? ctObj.flag : '🌍',
-        language    : document.getElementById('f-language').value.trim(),
-        categories  : cat ? [cat] : [],
-        is_live     : document.getElementById('f-live').checked,
-        is_new      : document.getElementById('f-new').checked,
-        is_premium  : document.getElementById('f-premium').checked,
-        sort_order  : parseInt(document.getElementById('f-sort').value) || 0,
-      }),
-    });
-    showMsg('add-msg', `✓ "${name}" kanali muvaffaqiyatli qo'shildi!`);
-    clearAddForm();
-    loadChannels();
-    setTimeout(() => clearMsg('add-msg'), 4000);
-  } catch(e) {
-    showMsg('add-msg', 'Xatolik: ' + e.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '➕ Kanal qo\'shish';
-  }
+  if(!name||!stream){showMsg('add-msg','Kanal nomi va Stream URL majburiy!',true);return;}
+  const btn=document.getElementById('add-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Saqlanmoqda…';
+  try{
+    const country=document.getElementById('f-country').value;
+    const ctObj=COUNTRIES.find(c=>c.code===country);
+    await sbFetch('channels',{method:'POST',body:JSON.stringify({
+      name,stream_url:stream,
+      logo_url:document.getElementById('f-logo').value.trim(),
+      country,country_flag:ctObj?ctObj.flag:'🌍',
+      language:document.getElementById('f-language').value.trim(),
+      categories:cat?[cat]:[],
+      is_live:document.getElementById('f-live').checked,
+      is_new:document.getElementById('f-new').checked,
+      is_premium:document.getElementById('f-premium').checked,
+      sort_order:parseInt(document.getElementById('f-sort').value)||0,
+    })});
+    showMsg('add-msg',`✓ "${name}" kanali muvaffaqiyatli qo'shildi!`);
+    clearAddForm(); loadChannels();
+    setTimeout(()=>clearMsg('add-msg'),4000);
+  }catch(e){showMsg('add-msg','Xatolik: '+e.message,true);}
+  finally{btn.disabled=false;btn.innerHTML='➕ Kanal qo\'shish';}
 }
 
-function clearAddForm() {
-  ['f-name','f-logo','f-stream','f-language'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('f-sort').value     = '0';
-  document.getElementById('f-category').value = '';
-  document.getElementById('f-country').value  = '';
-  document.getElementById('f-live').checked    = true;
-  document.getElementById('f-new').checked     = false;
-  document.getElementById('f-premium').checked = false;
-  document.getElementById('logo-preview').style.display = 'none';
-  document.getElementById('stream-test-result').textContent = '';
+function clearAddForm(){
+  ['f-name','f-logo','f-stream','f-language'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-sort').value='0';
+  document.getElementById('f-category').value='';
+  document.getElementById('f-live').checked=true;
+  document.getElementById('f-new').checked=false;
+  document.getElementById('f-premium').checked=false;
+  document.getElementById('logo-preview').style.display='none';
+  document.getElementById('stream-test-result').textContent='';
+  pickCountry('add',null);
 }
 
-// ─────────────────────────────────────────────
-// Logo preview
-// ─────────────────────────────────────────────
-
-function previewLogo() {
-  const url = document.getElementById('f-logo').value.trim();
-  const img = document.getElementById('logo-preview');
-  if (url) {
-    img.src = url;
-    img.style.display = 'block';
-  } else {
-    img.style.display = 'none';
-  }
+function previewLogo(){
+  const url=document.getElementById('f-logo').value.trim();
+  const img=document.getElementById('logo-preview');
+  if(url){img.src=url;img.style.display='block';}else img.style.display='none';
 }
 
-// ─────────────────────────────────────────────
-// Stream URL test
-// ─────────────────────────────────────────────
-
-function testStream() {
-  const url = document.getElementById('f-stream').value.trim();
-  const res = document.getElementById('stream-test-result');
-  if (!url) { res.innerHTML = '<span style="color:var(--red)">URL kiriting!</span>'; return; }
-  res.innerHTML = '<span style="color:var(--muted)"><span class="spinner"></span> Tekshirilmoqda…</span>';
-  fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
-    .then(r => {
-      res.innerHTML = r.ok
-        ? '<span style="color:var(--green)">✓ Stream ishlayapti!</span>'
-        : `<span style="color:var(--yellow)">⚠ Status: ${r.status}</span>`;
-    })
-    .catch(() => {
-      res.innerHTML = '<span style="color:var(--yellow)">⚠ CORS yoki URL noto\'g\'ri (lekin ba\'zi streamlar ishlashi mumkin)</span>';
-    });
+function testStream(){
+  const url=document.getElementById('f-stream').value.trim();
+  const res=document.getElementById('stream-test-result');
+  if(!url){res.innerHTML='<span style="color:var(--red)">URL kiriting!</span>';return;}
+  res.innerHTML='<span style="color:var(--muted)"><span class="spinner"></span> Tekshirilmoqda…</span>';
+  fetch(url,{method:'HEAD',signal:AbortSignal.timeout(5000)})
+    .then(r=>{res.innerHTML=r.ok?'<span style="color:var(--green)">✓ Stream ishlayapti!</span>':`<span style="color:var(--yellow)">⚠ Status: ${r.status}</span>`;})
+    .catch(()=>{res.innerHTML='<span style="color:var(--yellow)">⚠ CORS cheklovi (stream ishlashi mumkin)</span>';});
 }
 
-// ─────────────────────────────────────────────
-// Tahrirlash
-// ─────────────────────────────────────────────
-
-function openEdit(jsonStr) {
-  const ch = JSON.parse(jsonStr);
-  document.getElementById('e-id').value       = ch.id;
-  document.getElementById('e-name').value     = ch.name || '';
-  document.getElementById('e-logo').value     = ch.logo_url || '';
-  document.getElementById('e-stream').value   = ch.stream_url || '';
-  document.getElementById('e-language').value = ch.language || '';
-  document.getElementById('e-sort').value     = ch.sort_order || 0;
-  document.getElementById('e-live').checked    = ch.is_live;
-  document.getElementById('e-new').checked     = ch.is_new;
-  document.getElementById('e-premium').checked = ch.is_premium;
-
-  const cats = Array.isArray(ch.categories) ? ch.categories : [];
-  document.getElementById('e-category').value = cats[0] || '';
-  document.getElementById('e-country').value  = ch.country || '';
-
+function openEdit(js){
+  const ch=JSON.parse(js);
+  document.getElementById('e-id').value=ch.id;
+  document.getElementById('e-name').value=ch.name||'';
+  document.getElementById('e-logo').value=ch.logo_url||'';
+  document.getElementById('e-stream').value=ch.stream_url||'';
+  document.getElementById('e-language').value=ch.language||'';
+  document.getElementById('e-sort').value=ch.sort_order||0;
+  document.getElementById('e-live').checked=ch.is_live;
+  document.getElementById('e-new').checked=ch.is_new;
+  document.getElementById('e-premium').checked=ch.is_premium;
+  const cats=Array.isArray(ch.categories)?ch.categories:[];
+  document.getElementById('e-category').value=cats[0]||'';
+  pickCountry('edit',ch.country||null);
   clearMsg('edit-msg');
   document.getElementById('edit-modal').classList.add('show');
 }
 
-function closeEdit() {
-  document.getElementById('edit-modal').classList.remove('show');
-}
+function closeEdit(){document.getElementById('edit-modal').classList.remove('show');}
 
-async function saveChannel() {
-  const id = document.getElementById('e-id').value;
+async function saveChannel(){
+  const id=document.getElementById('e-id').value;
   clearMsg('edit-msg');
-  try {
-    const country = document.getElementById('e-country').value;
-    const ctObj   = COUNTRIES.find(c => c.code === country);
-    const cat     = document.getElementById('e-category').value;
-
-    await sbFetch(`channels?id=eq.${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        name        : document.getElementById('e-name').value.trim(),
-        logo_url    : document.getElementById('e-logo').value.trim(),
-        stream_url  : document.getElementById('e-stream').value.trim(),
-        language    : document.getElementById('e-language').value.trim(),
-        sort_order  : parseInt(document.getElementById('e-sort').value) || 0,
-        is_live     : document.getElementById('e-live').checked,
-        is_new      : document.getElementById('e-new').checked,
-        is_premium  : document.getElementById('e-premium').checked,
-        country     : country,
-        country_flag: ctObj ? ctObj.flag : '🌍',
-        categories  : cat ? [cat] : [],
-      }),
-    });
-    showMsg('edit-msg', '✓ Saqlandi!');
-    setTimeout(() => { closeEdit(); loadChannels(); }, 1200);
-  } catch(e) {
-    showMsg('edit-msg', 'Xatolik: ' + e.message, true);
-  }
+  try{
+    const country=document.getElementById('e-country').value;
+    const ctObj=COUNTRIES.find(c=>c.code===country);
+    const cat=document.getElementById('e-category').value;
+    await sbFetch(`channels?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({
+      name:document.getElementById('e-name').value.trim(),
+      logo_url:document.getElementById('e-logo').value.trim(),
+      stream_url:document.getElementById('e-stream').value.trim(),
+      language:document.getElementById('e-language').value.trim(),
+      sort_order:parseInt(document.getElementById('e-sort').value)||0,
+      is_live:document.getElementById('e-live').checked,
+      is_new:document.getElementById('e-new').checked,
+      is_premium:document.getElementById('e-premium').checked,
+      country,country_flag:ctObj?ctObj.flag:'🌍',
+      categories:cat?[cat]:[],
+    })});
+    showMsg('edit-msg','✓ Saqlandi!');
+    setTimeout(()=>{closeEdit();loadChannels();},1200);
+  }catch(e){showMsg('edit-msg','Xatolik: '+e.message,true);}
 }
 
-// ─────────────────────────────────────────────
-// LIVE toggle
-// ─────────────────────────────────────────────
-
-async function toggleLive(id, current) {
-  try {
-    await sbFetch(`channels?id=eq.${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ is_live: !current }),
-    });
-    loadChannels();
-  } catch(e) { alert('Xatolik: ' + e.message); }
+async function toggleLive(id,cur){
+  try{await sbFetch(`channels?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_live:!cur})});loadChannels();}
+  catch(e){alert('Xatolik: '+e.message);}
 }
 
-// ─────────────────────────────────────────────
-// O'chirish
-// ─────────────────────────────────────────────
-
-async function deleteChannel(id, name) {
-  if (!confirm(`"${name}" kanalni o'chirishni tasdiqlaysizmi?`)) return;
-  try {
-    await sbFetch(`channels?id=eq.${id}`, { method: 'DELETE' });
-    loadChannels();
-  } catch(e) { alert('Xatolik: ' + e.message); }
+async function deleteChannel(id,name){
+  if(!confirm(`"${name}" kanalni o'chirishni tasdiqlaysizmi?`))return;
+  try{await sbFetch(`channels?id=eq.${id}`,{method:'DELETE'});loadChannels();}
+  catch(e){alert('Xatolik: '+e.message);}
 }
 
-// ─────────────────────────────────────────────
-// Form toggle
-// ─────────────────────────────────────────────
-
-function toggleAddForm() {
-  const body = document.getElementById('add-form-body');
-  const btn  = document.getElementById('toggle-form-btn');
-  if (body.style.display === 'none') {
-    body.style.display = 'block';
-    btn.textContent = '▼ Yashirish';
-  } else {
-    body.style.display = 'none';
-    btn.textContent = '▶ Ko\'rsatish';
-  }
+function toggleAddForm(){
+  const body=document.getElementById('add-form-body');
+  const btn=document.getElementById('toggle-form-btn');
+  if(body.style.display==='none'){body.style.display='block';btn.textContent='▼ Yashirish';}
+  else{body.style.display='none';btn.textContent="▶ Ko'rsatish";}
 }
 
-// ─────────────────────────────────────────────
-// Modal yopish
-// ─────────────────────────────────────────────
+document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEdit();});
 
-document.getElementById('edit-modal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeEdit();
-});
-
-// ─────────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────────
-
-document.addEventListener('DOMContentLoaded', () => {
-  populateCountryDropdowns();
+document.addEventListener('DOMContentLoaded',()=>{
+  initDropdowns();
   loadChannels();
 });
 </script>
