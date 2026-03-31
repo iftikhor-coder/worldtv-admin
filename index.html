@@ -36,6 +36,27 @@
     .toggle-switch input:checked + .toggle-slider { background:var(--green); }
     .toggle-switch input:checked + .toggle-slider::before { transform:translateX(24px); }
     .toggle-switch input:disabled + .toggle-slider { opacity:.5; cursor:not-allowed; }
+
+    /* Qizil toggle — premium_locked uchun */
+    .toggle-switch.danger input:checked + .toggle-slider { background:var(--red); }
+
+    /* Flag row */
+    .flag-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:16px; background:var(--surface2); border-radius:12px;
+      border:1px solid var(--border); margin-bottom:10px;
+    }
+    .flag-row:last-child { margin-bottom:0; }
+    .flag-icon {
+      width:44px; height:44px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.3rem; flex-shrink:0;
+    }
+    .flag-info { display:flex; align-items:center; gap:14px; }
+    .flag-title { font-weight:600; font-size:.92rem; }
+    .flag-desc { font-size:.78rem; color:var(--muted); margin-top:3px; }
+    .flag-controls { display:flex; align-items:center; gap:12px; }
+    .flag-status { font-size:.8rem; font-family:var(--font-mono); }
   </style>
 </head>
 <body>
@@ -50,7 +71,7 @@
     <div class="nav-section-label">Asosiy</div>
     <a class="nav-item" href="index.html"><span class="icon">📊</span> Dashboard</a>
     <a class="nav-item" href="#"><span class="icon">👥</span> Foydalanuvchilar <span class="nav-badge">12.5k</span></a>
-    <a class="nav-item" href="#"><span class="icon">📺</span> Kanallar</a>
+    <a class="nav-item" href="channels.html"><span class="icon">📺</span> Kanallar</a>
     <a class="nav-item" href="#"><span class="icon">📈</span> Analytics</a>
   </div>
   <div class="nav-section">
@@ -92,6 +113,8 @@
   </div>
 
   <div class="content">
+
+    <!-- KPI -->
     <div class="kpi-grid">
       <div class="kpi-card blue">
         <div class="kpi-label">Faol foydalanuvchilar</div>
@@ -127,29 +150,48 @@
       </div>
       <div style="padding:20px">
 
-        <!-- Obuna toggle -->
-        <div style="display:flex;align-items:center;justify-content:space-between;
-                    padding:16px;background:var(--surface2);border-radius:12px;
-                    border:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:14px">
-            <div style="width:44px;height:44px;border-radius:10px;
-                        background:rgba(108,123,255,.12);
-                        display:flex;align-items:center;justify-content:center;
-                        font-size:1.3rem">💳</div>
+        <!-- 1. Obuna bo'limi toggle -->
+        <div class="flag-row">
+          <div class="flag-info">
+            <div class="flag-icon" style="background:rgba(108,123,255,.12)">💳</div>
             <div>
-              <div style="font-weight:600;font-size:.92rem">Obuna bo'limi</div>
-              <div style="font-size:.78rem;color:var(--muted);margin-top:3px">
-                Faol bo'lsa — APK ichida obuna sahifasi ko'rinadi va pulli kanallar qulflangadi
+              <div class="flag-title">Obuna bo'limi</div>
+              <div class="flag-desc">
+                Faol bo'lsa — APK ichida obuna sahifasi ko'rinadi
               </div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:12px">
-            <span id="sub-flag-label" style="font-size:.8rem;font-family:var(--font-mono)">
+          <div class="flag-controls">
+            <span class="flag-status" id="sub-flag-label">
               <span class="spinner"></span>
             </span>
-            <!-- Toggle switch -->
             <label class="toggle-switch" title="Obuna bo'limini yoqish/o'chirish">
-              <input type="checkbox" id="sub-flag-toggle" onchange="setSubscriptionFlag(this.checked)" disabled/>
+              <input type="checkbox" id="sub-flag-toggle"
+                     onchange="setFlag('subscription_enabled', this.checked, 'sub')" disabled/>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. Pulli kanallar qulfi toggle -->
+        <div class="flag-row">
+          <div class="flag-info">
+            <div class="flag-icon" style="background:rgba(255,95,109,.1)">🔒</div>
+            <div>
+              <div class="flag-title">Pulli kanallar qulfi</div>
+              <div class="flag-desc">
+                Yoqilsa — pulli kanallar qulflangadi, foydalanuvchilar obuna sahifasiga yo'naltiriladi.
+                O'chirilsa — pulli kanallar yonida <strong style="color:var(--green)">"Ochiq"</strong> ko'rinadi
+              </div>
+            </div>
+          </div>
+          <div class="flag-controls">
+            <span class="flag-status" id="prem-flag-label">
+              <span class="spinner"></span>
+            </span>
+            <label class="toggle-switch danger" title="Pulli kanallarni qulflash/ochish">
+              <input type="checkbox" id="prem-flag-toggle"
+                     onchange="setFlag('premium_locked', this.checked, 'prem')" disabled/>
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -158,6 +200,7 @@
       </div>
     </div>
 
+    <!-- CHARTS -->
     <div class="charts-row">
       <div class="chart-card">
         <div class="chart-header">
@@ -184,6 +227,7 @@
       </div>
     </div>
 
+    <!-- BOTTOM -->
     <div class="bottom-row">
       <div class="chart-card">
         <div class="table-header">
@@ -207,41 +251,63 @@
         <div id="activity-log"></div>
       </div>
     </div>
+
   </div>
 </div>
 
 <script>
-// ── Feature Flag: subscription_enabled ──────────────────────────
+// ═══════════════════════════════════════════════
+// FEATURE FLAGS — Umumiy funksiya
+// ═══════════════════════════════════════════════
 
-async function loadSubscriptionFlag() {
-  try {
-    const data = await sbFetch('feature_flags?key=eq.subscription_enabled&select=key,value');
-    const flag  = data?.[0];
-    const enabled = flag?.value ?? false;
+const FLAG_CONFIG = {
+  sub: {
+    key    : 'subscription_enabled',
+    toggleId: 'sub-flag-toggle',
+    labelId : 'sub-flag-label',
+    onMsg  : '✅ Obuna bo\'limi yoqildi — APK da ko\'rinadi',
+    offMsg : '🔕 Obuna bo\'limi o\'chirildi — APK dan yashirildi',
+    onText : '<span style="color:var(--green)">● Faol</span>',
+    offText: '<span style="color:var(--muted)">● O\'chirilgan</span>',
+  },
+  prem: {
+    key    : 'premium_locked',
+    toggleId: 'prem-flag-toggle',
+    labelId : 'prem-flag-label',
+    onMsg  : '🔒 Pulli kanallar qulflandi — foydalanuvchilar obunaga yo\'naltiriladi',
+    offMsg : '🔓 Pulli kanallar ochildi — hamma ko\'ra oladi',
+    onText : '<span style="color:var(--red)">🔒 Qulflangan</span>',
+    offText: '<span style="color:var(--green)">🔓 Ochiq</span>',
+  },
+};
 
-    const toggle = document.getElementById('sub-flag-toggle');
-    const label  = document.getElementById('sub-flag-label');
-
-    toggle.checked  = enabled;
-    toggle.disabled = false;
-    label.innerHTML = enabled
-      ? '<span style="color:var(--green)">● Faol</span>'
-      : '<span style="color:var(--muted)">● O\'chirilgan</span>';
-  } catch(e) {
-    document.getElementById('sub-flag-label').innerHTML =
-      '<span style="color:var(--red)">Xatolik</span>';
+async function loadAllFlags() {
+  for (const [prefix, cfg] of Object.entries(FLAG_CONFIG)) {
+    try {
+      const data    = await sbFetch(`feature_flags?key=eq.${cfg.key}&select=key,value`);
+      const enabled = data?.[0]?.value ?? false;
+      const toggle  = document.getElementById(cfg.toggleId);
+      const label   = document.getElementById(cfg.labelId);
+      toggle.checked  = enabled;
+      toggle.disabled = false;
+      label.innerHTML = enabled ? cfg.onText : cfg.offText;
+    } catch(e) {
+      document.getElementById(cfg.labelId).innerHTML =
+        '<span style="color:var(--red)">Xatolik</span>';
+    }
   }
 }
 
-async function setSubscriptionFlag(enabled) {
-  const toggle = document.getElementById('sub-flag-toggle');
-  const label  = document.getElementById('sub-flag-label');
+async function setFlag(key, enabled, prefix) {
+  const cfg    = FLAG_CONFIG[prefix];
+  const toggle = document.getElementById(cfg.toggleId);
+  const label  = document.getElementById(cfg.labelId);
 
   toggle.disabled = true;
   label.innerHTML = '<span class="spinner"></span>';
 
   try {
-    await sbFetch('feature_flags?key=eq.subscription_enabled', {
+    await sbFetch(`feature_flags?key=eq.${key}`, {
       method : 'PATCH',
       headers: { 'Prefer': 'return=minimal' },
       body   : JSON.stringify({
@@ -249,27 +315,17 @@ async function setSubscriptionFlag(enabled) {
         updated_at : new Date().toISOString(),
       }),
     });
-
-    label.innerHTML = enabled
-      ? '<span style="color:var(--green)">● Faol</span>'
-      : '<span style="color:var(--muted)">● O\'chirilgan</span>';
-
-    // Toast xabar
-    showToast(
-      enabled
-        ? '✅ Obuna bo\'limi yoqildi — APK da ko\'rinadi'
-        : '🔕 Obuna bo\'limi o\'chirildi — APK dan yashirildi'
-    );
+    label.innerHTML = enabled ? cfg.onText : cfg.offText;
+    showToast(enabled ? cfg.onMsg : cfg.offMsg);
   } catch(e) {
-    // Xatolikda orqaga qaytarish
-    toggle.checked = !enabled;
+    toggle.checked  = !enabled;
     label.innerHTML = '<span style="color:var(--red)">Xatolik!</span>';
   } finally {
     toggle.disabled = false;
   }
 }
 
-// ── Toast xabar ────────────────────────────────────────────────
+// ── Toast ──────────────────────────────────────────────────────
 
 function showToast(msg) {
   let toast = document.getElementById('admin-toast');
@@ -282,8 +338,7 @@ function showToast(msg) {
       border-radius:10px; padding:14px 20px;
       font-size:.85rem; color:var(--text);
       box-shadow:0 8px 32px rgba(0,0,0,.4);
-      transition:opacity .3s; opacity:0;
-      max-width:320px;
+      transition:opacity .3s; opacity:0; max-width:320px;
     `;
     document.body.appendChild(toast);
   }
@@ -294,7 +349,7 @@ function showToast(msg) {
 }
 
 // ── Init ───────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', loadSubscriptionFlag);
+document.addEventListener('DOMContentLoaded', loadAllFlags);
 </script>
 </body>
 </html>
