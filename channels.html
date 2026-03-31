@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WorldTV Admin — Kanallar</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <script src="js/admin.js" defer></script>
+  <style>
+    .stream-test-btn {
+      padding: 8px 14px; border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface2); color: var(--muted);
+      font-family: var(--font-ui); font-size: .8rem;
+      cursor: pointer; transition: .15s; white-space: nowrap;
+    }
+    .stream-test-btn:hover { color: var(--green); border-color: var(--green); }
+    .stream-row { display: flex; gap: 8px; align-items: flex-end; }
+    .stream-row .inp { flex: 1; }
+    .thumb-preview {
+      width: 56px; height: 56px; border-radius: 10px;
+      object-fit: contain; background: var(--surface2);
+      border: 1px solid var(--border); display: none;
+    }
+    .logo-row { display: flex; gap: 10px; align-items: flex-end; }
+    .logo-row .form-group { flex: 1; }
+    .filter-bar {
+      display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .filter-bar .inp { max-width: 220px; }
+    .filter-bar select.inp { max-width: 180px; }
+    .channel-logo {
+      width: 36px; height: 36px; border-radius: 7px;
+      object-fit: contain; background: var(--surface2);
+      border: 1px solid var(--border);
+    }
+    .channel-name-cell { display: flex; align-items: center; gap: 10px; }
+    .url-cell {
+      max-width: 180px; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+      font-family: var(--font-mono); font-size: .72rem; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">W</div>
+    <div class="logo-text">World<span>TV</span></div>
+    <span class="logo-badge">Admin</span>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Asosiy</div>
+    <a class="nav-item" href="index.html"><span class="icon">📊</span> Dashboard</a>
+    <a class="nav-item" href="#"><span class="icon">👥</span> Foydalanuvchilar</a>
+    <a class="nav-item" href="channels.html"><span class="icon">📺</span> Kanallar</a>
+    <a class="nav-item" href="#"><span class="icon">📈</span> Analytics</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Moliya</div>
+    <a class="nav-item" href="subscription-plans.html"><span class="icon">💳</span> Obuna narxlari</a>
+    <a class="nav-item" href="#"><span class="icon">📊</span> Daromadlar</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Tizim</div>
+    <a class="nav-item" href="#"><span class="icon">🔔</span> Bildirishnomalar</a>
+    <a class="nav-item" href="#"><span class="icon">⚙️</span> Sozlamalar</a>
+    <a class="nav-item" href="#"><span class="icon">📝</span> Loglar</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="admin-card">
+      <div class="admin-avatar">A</div>
+      <div>
+        <div class="admin-name">Admin</div>
+        <div class="admin-role">Super Administrator</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="adminLogout()">🚪 Chiqish</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div>
+        <div class="topbar-title">TV Kanallar</div>
+        <div class="topbar-sub">Kanallarni qo'shish, tahrirlash, o'chirish</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="loadChannels()">↻ Yangilash</button>
+      <div class="topbar-time" id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <div class="stat-val blue" id="st-total">—</div>
+        <div class="stat-lbl">Jami kanallar</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val green" id="st-active">—</div>
+        <div class="stat-lbl">Faol kanallar</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val yellow" id="st-premium">—</div>
+        <div class="stat-lbl">Premium kanallar</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val" id="st-new" style="color:var(--red)">—</div>
+        <div class="stat-lbl">Yangi kanallar</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val" id="st-countries" style="color:var(--accent)">—</div>
+        <div class="stat-lbl">Davlatlar soni</div>
+      </div>
+    </div>
+
+    <!-- KANAL QO'SHISH -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-title">➕ Yangi kanal qo'shish</div>
+        <button class="btn btn-ghost" onclick="toggleAddForm()" id="toggle-form-btn">
+          ▼ Yashirish
+        </button>
+      </div>
+      <div style="padding:24px" id="add-form-body">
+        <div id="add-msg"></div>
+        <div class="form-grid">
+
+          <!-- Kanal nomi -->
+          <div class="form-group">
+            <label>Kanal nomi *</label>
+            <input class="inp" id="f-name" placeholder="BBC World News"/>
+          </div>
+
+          <!-- Kategoriya -->
+          <div class="form-group">
+            <label>Kategoriya *</label>
+            <select class="inp" id="f-category">
+              <option value="">— Tanlang —</option>
+              <option value="news">📰 Yangiliklar</option>
+              <option value="sport">⚽ Sport</option>
+              <option value="movies">🎬 Kino</option>
+              <option value="music">🎵 Musiqa</option>
+              <option value="kids">🧒 Bolalar</option>
+              <option value="cooking">🍳 Oshxona</option>
+              <option value="nature">🌿 Tabiat</option>
+              <option value="documentary">🎥 Hujjatli</option>
+              <option value="entertainment">🎭 Ko'ngilochar</option>
+              <option value="religious">🕌 Diniy</option>
+              <option value="business">💼 Biznes</option>
+              <option value="tech">💻 Texnologiya</option>
+              <option value="general">📺 Umumiy</option>
+            </select>
+          </div>
+
+          <!-- Davlat -->
+          <div class="form-group">
+            <label>Davlat *</label>
+            <select class="inp" id="f-country">
+              <option value="">— Tanlang —</option>
+            </select>
+          </div>
+
+          <!-- Til -->
+          <div class="form-group">
+            <label>Til</label>
+            <input class="inp" id="f-language" placeholder="uz, en, ru, tr..."/>
+          </div>
+
+          <!-- Tartib raqami -->
+          <div class="form-group">
+            <label>Tartib raqami</label>
+            <input class="inp" id="f-sort" type="number" value="0" min="0"/>
+          </div>
+
+          <!-- Checkboxlar -->
+          <div class="form-group">
+            <label style="opacity:0">.</label>
+            <div class="checkbox-row">
+              <input type="checkbox" id="f-live" checked/>
+              <label for="f-live">📡 Jonli efir (LIVE)</label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="f-new"/>
+              <label for="f-new">🆕 NEW badge ko'rinsin</label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="f-premium"/>
+              <label for="f-premium">⭐ Premium kanal</label>
+            </div>
+          </div>
+
+          <!-- Logo URL -->
+          <div class="form-group full">
+            <label>Logo URL</label>
+            <div class="logo-row">
+              <div class="form-group">
+                <input class="inp" id="f-logo"
+                       placeholder="https://example.com/logo.png"
+                       oninput="previewLogo()"/>
+              </div>
+              <img class="thumb-preview" id="logo-preview" src="" alt="logo"/>
+            </div>
+          </div>
+
+          <!-- Stream URL -->
+          <div class="form-group full">
+            <label>Stream URL (m3u8) *</label>
+            <div class="stream-row">
+              <input class="inp" id="f-stream"
+                     placeholder="https://example.com/stream.m3u8"/>
+              <button class="stream-test-btn" onclick="testStream()">
+                ▶ Test
+              </button>
+            </div>
+            <div id="stream-test-result" style="font-size:.75rem;margin-top:6px"></div>
+          </div>
+
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="add-btn" onclick="addChannel()">
+            ➕ Kanal qo'shish
+          </button>
+          <button class="btn btn-ghost" onclick="clearAddForm()">✕ Tozalash</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KANALLAR JADVALI -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-title">📋 Kanallar ro'yxati</div>
+      </div>
+      <div style="padding:16px 20px 0">
+        <div class="filter-bar">
+          <input class="inp" id="search-input" placeholder="🔍 Kanal nomi..."
+                 oninput="filterTable()"/>
+          <select class="inp" id="filter-country" onchange="filterTable()">
+            <option value="">Barcha davlatlar</option>
+          </select>
+          <select class="inp" id="filter-category" onchange="filterTable()">
+            <option value="">Barcha kategoriyalar</option>
+            <option value="news">📰 Yangiliklar</option>
+            <option value="sport">⚽ Sport</option>
+            <option value="movies">🎬 Kino</option>
+            <option value="music">🎵 Musiqa</option>
+            <option value="kids">🧒 Bolalar</option>
+            <option value="cooking">🍳 Oshxona</option>
+            <option value="nature">🌿 Tabiat</option>
+            <option value="general">📺 Umumiy</option>
+          </select>
+          <select class="inp" id="filter-type" onchange="filterTable()">
+            <option value="">Barcha turlar</option>
+            <option value="premium">⭐ Premium</option>
+            <option value="free">🆓 Bepul</option>
+            <option value="new">🆕 Yangi</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Kanal</th>
+              <th>Kategoriya</th>
+              <th>Davlat</th>
+              <th>Stream URL</th>
+              <th>Holat</th>
+              <th>Amallar</th>
+            </tr>
+          </thead>
+          <tbody id="channels-tbody">
+            <tr class="loading-row">
+              <td colspan="6"><span class="spinner"></span> Yuklanmoqda…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:12px 20px;font-size:.78rem;color:var(--muted)" id="table-count"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">✏️ Kanalni tahrirlash</div>
+    <div id="edit-msg"></div>
+    <input type="hidden" id="e-id"/>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Kanal nomi</label>
+        <input class="inp" id="e-name"/>
+      </div>
+      <div class="form-group">
+        <label>Kategoriya</label>
+        <select class="inp" id="e-category">
+          <option value="">— Tanlang —</option>
+          <option value="news">📰 Yangiliklar</option>
+          <option value="sport">⚽ Sport</option>
+          <option value="movies">🎬 Kino</option>
+          <option value="music">🎵 Musiqa</option>
+          <option value="kids">🧒 Bolalar</option>
+          <option value="cooking">🍳 Oshxona</option>
+          <option value="nature">🌿 Tabiat</option>
+          <option value="documentary">🎥 Hujjatli</option>
+          <option value="entertainment">🎭 Ko'ngilochar</option>
+          <option value="religious">🕌 Diniy</option>
+          <option value="business">💼 Biznes</option>
+          <option value="tech">💻 Texnologiya</option>
+          <option value="general">📺 Umumiy</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Davlat</label>
+        <select class="inp" id="e-country"></select>
+      </div>
+      <div class="form-group">
+        <label>Til</label>
+        <input class="inp" id="e-language"/>
+      </div>
+      <div class="form-group">
+        <label>Tartib raqami</label>
+        <input class="inp" id="e-sort" type="number"/>
+      </div>
+      <div class="form-group">
+        <label style="opacity:0">.</label>
+        <div class="checkbox-row">
+          <input type="checkbox" id="e-live"/>
+          <label for="e-live">📡 LIVE</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="e-new"/>
+          <label for="e-new">🆕 NEW badge</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="e-premium"/>
+          <label for="e-premium">⭐ Premium</label>
+        </div>
+      </div>
+      <div class="form-group full">
+        <label>Logo URL</label>
+        <input class="inp" id="e-logo"/>
+      </div>
+      <div class="form-group full">
+        <label>Stream URL</label>
+        <input class="inp" id="e-stream"/>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="saveChannel()">💾 Saqlash</button>
+      <button class="btn btn-ghost" onclick="closeEdit()">Bekor qilish</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     BARCHA DAVLATLAR RO'YXATI
+═══════════════════════════════════════════ -->
+<script>
+const COUNTRIES = [
+  {code:'AF',flag:'🇦🇫',name:"Afgʻoniston"},
+  {code:'AL',flag:'🇦🇱',name:"Albaniya"},
+  {code:'DZ',flag:'🇩🇿',name:"Jazoir"},
+  {code:'AD',flag:'🇦🇩',name:"Andorra"},
+  {code:'AO',flag:'🇦🇴',name:"Angola"},
+  {code:'AG',flag:'🇦🇬',name:"Antigua va Barbuda"},
+  {code:'AR',flag:'🇦🇷',name:"Argentina"},
+  {code:'AM',flag:'🇦🇲',name:"Armaniston"},
+  {code:'AU',flag:'🇦🇺',name:"Avstraliya"},
+  {code:'AT',flag:'🇦🇹',name:"Avstriya"},
+  {code:'AZ',flag:'🇦🇿',name:"Ozarbayjon"},
+  {code:'BS',flag:'🇧🇸',name:"Bagama orollari"},
+  {code:'BH',flag:'🇧🇭',name:"Bahrayn"},
+  {code:'BD',flag:'🇧🇩',name:"Bangladesh"},
+  {code:'BB',flag:'🇧🇧',name:"Barbados"},
+  {code:'BY',flag:'🇧🇾',name:"Belarus"},
+  {code:'BE',flag:'🇧🇪',name:"Belgiya"},
+  {code:'BZ',flag:'🇧🇿',name:"Beliz"},
+  {code:'BJ',flag:'🇧🇯',name:"Benin"},
+  {code:'BT',flag:'🇧🇹',name:"Butan"},
+  {code:'BO',flag:'🇧🇴',name:"Boliviya"},
+  {code:'BA',flag:'🇧🇦',name:"Bosniya va Gersegovina"},
+  {code:'BW',flag:'🇧🇼',name:"Botsvana"},
+  {code:'BR',flag:'🇧🇷',name:"Braziliya"},
+  {code:'BN',flag:'🇧🇳',name:"Bruney"},
+  {code:'BG',flag:'🇧🇬',name:"Bolgariya"},
+  {code:'BF',flag:'🇧🇫',name:"Burkina-Faso"},
+  {code:'BI',flag:'🇧🇮',name:"Burundi"},
+  {code:'CV',flag:'🇨🇻',name:"Kabo-Verde"},
+  {code:'KH',flag:'🇰🇭',name:"Kambodja"},
+  {code:'CM',flag:'🇨🇲',name:"Kamerun"},
+  {code:'CA',flag:'🇨🇦',name:"Kanada"},
+  {code:'CF',flag:'🇨🇫',name:"Markaziy Afrika Respublikasi"},
+  {code:'TD',flag:'🇹🇩',name:"Chad"},
+  {code:'CL',flag:'🇨🇱',name:"Chili"},
+  {code:'CN',flag:'🇨🇳',name:"Xitoy"},
+  {code:'CO',flag:'🇨🇴',name:"Kolumbiya"},
+  {code:'KM',flag:'🇰🇲',name:"Komor orollari"},
+  {code:'CG',flag:'🇨🇬',name:"Kongo"},
+  {code:'CR',flag:'🇨🇷',name:"Kosta-Rika"},
+  {code:'HR',flag:'🇭🇷',name:"Xorvatiya"},
+  {code:'CU',flag:'🇨🇺',name:"Kuba"},
+  {code:'CY',flag:'🇨🇾',name:"Kipr"},
+  {code:'CZ',flag:'🇨🇿',name:"Chexiya"},
+  {code:'DK',flag:'🇩🇰',name:"Daniya"},
+  {code:'DJ',flag:'🇩🇯',name:"Jibuti"},
+  {code:'DM',flag:'🇩🇲',name:"Dominika"},
+  {code:'DO',flag:'🇩🇴',name:"Dominikan Respublikasi"},
+  {code:'EC',flag:'🇪🇨',name:"Ekvador"},
+  {code:'EG',flag:'🇪🇬',name:"Misr"},
+  {code:'SV',flag:'🇸🇻',name:"Salvador"},
+  {code:'GQ',flag:'🇬🇶',name:"Ekvatorial Gvineya"},
+  {code:'ER',flag:'🇪🇷',name:"Eritreya"},
+  {code:'EE',flag:'🇪🇪',name:"Estoniya"},
+  {code:'SZ',flag:'🇸🇿',name:"Svazilend"},
+  {code:'ET',flag:'🇪🇹',name:"Efiopiya"},
+  {code:'FJ',flag:'🇫🇯',name:"Fiji"},
+  {code:'FI',flag:'🇫🇮',name:"Finlandiya"},
+  {code:'FR',flag:'🇫🇷',name:"Fransiya"},
+  {code:'GA',flag:'🇬🇦',name:"Gabon"},
+  {code:'GM',flag:'🇬🇲',name:"Gambiya"},
+  {code:'GE',flag:'🇬🇪',name:"Gruziya"},
+  {code:'DE',flag:'🇩🇪',name:"Germaniya"},
+  {code:'GH',flag:'🇬🇭',name:"Gana"},
+  {code:'GR',flag:'🇬🇷',name:"Gretsiya"},
+  {code:'GD',flag:'🇬🇩',name:"Grenada"},
+  {code:'GT',flag:'🇬🇹',name:"Gvatemala"},
+  {code:'GN',flag:'🇬🇳',name:"Gvineya"},
+  {code:'GW',flag:'🇬🇼',name:"Gvineya-Bisau"},
+  {code:'GY',flag:'🇬🇾',name:"Gayana"},
+  {code:'HT',flag:'🇭🇹',name:"Gaiti"},
+  {code:'HN',flag:'🇭🇳',name:"Gonduras"},
+  {code:'HU',flag:'🇭🇺',name:"Vengriya"},
+  {code:'IS',flag:'🇮🇸',name:"Islandiya"},
+  {code:'IN',flag:'🇮🇳',name:"Hindiston"},
+  {code:'ID',flag:'🇮🇩',name:"Indoneziya"},
+  {code:'IR',flag:'🇮🇷',name:"Eron"},
+  {code:'IQ',flag:'🇮🇶',name:"Iroq"},
+  {code:'IE',flag:'🇮🇪',name:"Irlandiya"},
+  {code:'IL',flag:'🇮🇱',name:"Isroil"},
+  {code:'IT',flag:'🇮🇹',name:"Italiya"},
+  {code:'JM',flag:'🇯🇲',name:"Yamayka"},
+  {code:'JP',flag:'🇯🇵',name:"Yaponiya"},
+  {code:'JO',flag:'🇯🇴',name:"Iordaniya"},
+  {code:'KZ',flag:'🇰🇿',name:"Qozog'iston"},
+  {code:'KE',flag:'🇰🇪',name:"Keniya"},
+  {code:'KI',flag:'🇰🇮',name:"Kiribati"},
+  {code:'KP',flag:'🇰🇵',name:"Shimoliy Koreya"},
+  {code:'KR',flag:'🇰🇷',name:"Janubiy Koreya"},
+  {code:'KW',flag:'🇰🇼',name:"Quvayt"},
+  {code:'KG',flag:'🇰🇬',name:"Qirgʻiziston"},
+  {code:'LA',flag:'🇱🇦',name:"Laos"},
+  {code:'LV',flag:'🇱🇻',name:"Latviya"},
+  {code:'LB',flag:'🇱🇧',name:"Livan"},
+  {code:'LS',flag:'🇱🇸',name:"Lesoto"},
+  {code:'LR',flag:'🇱🇷',name:"Liberiya"},
+  {code:'LY',flag:'🇱🇾',name:"Liviya"},
+  {code:'LI',flag:'🇱🇮',name:"Lixtenshteyn"},
+  {code:'LT',flag:'🇱🇹',name:"Litva"},
+  {code:'LU',flag:'🇱🇺',name:"Lyuksemburg"},
+  {code:'MG',flag:'🇲🇬',name:"Madagaskar"},
+  {code:'MW',flag:'🇲🇼',name:"Malavi"},
+  {code:'MY',flag:'🇲🇾',name:"Malayziya"},
+  {code:'MV',flag:'🇲🇻',name:"Maldiv orollari"},
+  {code:'ML',flag:'🇲🇱',name:"Mali"},
+  {code:'MT',flag:'🇲🇹',name:"Malta"},
+  {code:'MH',flag:'🇲🇭',name:"Marshall orollari"},
+  {code:'MR',flag:'🇲🇷',name:"Mavritaniya"},
+  {code:'MU',flag:'🇲🇺',name:"Mavrikiy"},
+  {code:'MX',flag:'🇲🇽',name:"Meksika"},
+  {code:'FM',flag:'🇫🇲',name:"Mikroneziya"},
+  {code:'MD',flag:'🇲🇩',name:"Moldova"},
+  {code:'MC',flag:'🇲🇨',name:"Monako"},
+  {code:'MN',flag:'🇲🇳',name:"Mo'g'uliston"},
+  {code:'ME',flag:'🇲🇪',name:"Chernogoriya"},
+  {code:'MA',flag:'🇲🇦',name:"Marokash"},
+  {code:'MZ',flag:'🇲🇿',name:"Mozambik"},
+  {code:'MM',flag:'🇲🇲',name:"Myanma"},
+  {code:'NA',flag:'🇳🇦',name:"Namibiya"},
+  {code:'NR',flag:'🇳🇷',name:"Nauru"},
+  {code:'NP',flag:'🇳🇵',name:"Nepal"},
+  {code:'NL',flag:'🇳🇱',name:"Niderlandiya"},
+  {code:'NZ',flag:'🇳🇿',name:"Yangi Zelandiya"},
+  {code:'NI',flag:'🇳🇮',name:"Nikaragua"},
+  {code:'NE',flag:'🇳🇪',name:"Niger"},
+  {code:'NG',flag:'🇳🇬',name:"Nigeriya"},
+  {code:'MK',flag:'🇲🇰',name:"Shimoliy Makedoniya"},
+  {code:'NO',flag:'🇳🇴',name:"Norvegiya"},
+  {code:'OM',flag:'🇴🇲',name:"Ummon"},
+  {code:'PK',flag:'🇵🇰',name:"Pokiston"},
+  {code:'PW',flag:'🇵🇼',name:"Palau"},
+  {code:'PS',flag:'🇵🇸',name:"Falastin"},
+  {code:'PA',flag:'🇵🇦',name:"Panama"},
+  {code:'PG',flag:'🇵🇬',name:"Papua Yangi Gvineya"},
+  {code:'PY',flag:'🇵🇾',name:"Paragvay"},
+  {code:'PE',flag:'🇵🇪',name:"Peru"},
+  {code:'PH',flag:'🇵🇭',name:"Filippin"},
+  {code:'PL',flag:'🇵🇱',name:"Polsha"},
+  {code:'PT',flag:'🇵🇹',name:"Portugaliya"},
+  {code:'QA',flag:'🇶🇦',name:"Qatar"},
+  {code:'RO',flag:'🇷🇴',name:"Ruminiya"},
+  {code:'RU',flag:'🇷🇺',name:"Rossiya"},
+  {code:'RW',flag:'🇷🇼',name:"Ruanda"},
+  {code:'KN',flag:'🇰🇳',name:"Sent-Kits va Nevis"},
+  {code:'LC',flag:'🇱🇨',name:"Sent-Lyusiya"},
+  {code:'VC',flag:'🇻🇨',name:"Sent-Vinsent va Grenadinlar"},
+  {code:'WS',flag:'🇼🇸',name:"Samoa"},
+  {code:'SM',flag:'🇸🇲',name:"San-Marino"},
+  {code:'ST',flag:'🇸🇹',name:"San-Tome va Prinsipi"},
+  {code:'SA',flag:'🇸🇦',name:"Saudiya Arabistoni"},
+  {code:'SN',flag:'🇸🇳',name:"Senegal"},
+  {code:'RS',flag:'🇷🇸',name:"Serbiya"},
+  {code:'SC',flag:'🇸🇨',name:"Seyshel orollari"},
+  {code:'SL',flag:'🇸🇱',name:"Syerra-Leone"},
+  {code:'SG',flag:'🇸🇬',name:"Singapur"},
+  {code:'SK',flag:'🇸🇰',name:"Slovakiya"},
+  {code:'SI',flag:'🇸🇮',name:"Sloveniya"},
+  {code:'SB',flag:'🇸🇧',name:"Solomon orollari"},
+  {code:'SO',flag:'🇸🇴',name:"Somali"},
+  {code:'ZA',flag:'🇿🇦',name:"Janubiy Afrika"},
+  {code:'SS',flag:'🇸🇸',name:"Janubiy Sudan"},
+  {code:'ES',flag:'🇪🇸',name:"Ispaniya"},
+  {code:'LK',flag:'🇱🇰',name:"Shri-Lanka"},
+  {code:'SD',flag:'🇸🇩',name:"Sudan"},
+  {code:'SR',flag:'🇸🇷',name:"Surinam"},
+  {code:'SE',flag:'🇸🇪',name:"Shvetsiya"},
+  {code:'CH',flag:'🇨🇭',name:"Shveytsariya"},
+  {code:'SY',flag:'🇸🇾',name:"Suriya"},
+  {code:'TW',flag:'🇹🇼',name:"Tayvan"},
+  {code:'TJ',flag:'🇹🇯',name:"Tojikiston"},
+  {code:'TZ',flag:'🇹🇿',name:"Tanzaniya"},
+  {code:'TH',flag:'🇹🇭',name:"Tailand"},
+  {code:'TL',flag:'🇹🇱',name:"Sharqiy Timor"},
+  {code:'TG',flag:'🇹🇬',name:"Togo"},
+  {code:'TO',flag:'🇹🇴',name:"Tonga"},
+  {code:'TT',flag:'🇹🇹',name:"Trinidad va Tobago"},
+  {code:'TN',flag:'🇹🇳',name:"Tunis"},
+  {code:'TR',flag:'🇹🇷',name:"Turkiya"},
+  {code:'TM',flag:'🇹🇲',name:"Turkmaniston"},
+  {code:'TV',flag:'🇹🇻',name:"Tuvalu"},
+  {code:'UG',flag:'🇺🇬',name:"Uganda"},
+  {code:'UA',flag:'🇺🇦',name:"Ukraina"},
+  {code:'AE',flag:'🇦🇪',name:"Birlashgan Arab Amirliklari"},
+  {code:'GB',flag:'🇬🇧',name:"Buyuk Britaniya"},
+  {code:'US',flag:'🇺🇸',name:"AQSh"},
+  {code:'UY',flag:'🇺🇾',name:"Urugvay"},
+  {code:'UZ',flag:'🇺🇿',name:"O'zbekiston"},
+  {code:'VU',flag:'🇻🇺',name:"Vanuatu"},
+  {code:'VE',flag:'🇻🇪',name:"Venesuela"},
+  {code:'VN',flag:'🇻🇳',name:"Vyetnam"},
+  {code:'YE',flag:'🇾🇪',name:"Yaman"},
+  {code:'ZM',flag:'🇿🇲',name:"Zambiya"},
+  {code:'ZW',flag:'🇿🇼',name:"Zimbabwe"},
+];
+
+// ─────────────────────────────────────────────
+// Davlatlar dropdownlarini to'ldirish
+// ─────────────────────────────────────────────
+
+function populateCountryDropdowns() {
+  const selects = ['f-country','e-country','filter-country'];
+  selects.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const isFilter = id === 'filter-country';
+    COUNTRIES.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.code;
+      opt.textContent = `${c.flag} ${c.name}`;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// Kanallarni yuklash
+// ─────────────────────────────────────────────
+
+let allChannels = [];
+let filteredChannels = [];
+
+async function loadChannels() {
+  document.getElementById('channels-tbody').innerHTML =
+    '<tr class="loading-row"><td colspan="6"><span class="spinner"></span> Yuklanmoqda…</td></tr>';
+  try {
+    allChannels = await sbFetch('channels?select=*&order=sort_order.asc,created_at.desc') || [];
+    filteredChannels = [...allChannels];
+    updateStats();
+    renderTable();
+  } catch(e) {
+    document.getElementById('channels-tbody').innerHTML =
+      `<tr><td colspan="6" style="color:var(--red);padding:20px">Xatolik: ${e.message}</td></tr>`;
+  }
+}
+
+function updateStats() {
+  const active   = allChannels.filter(c => c.is_live);
+  const premium  = allChannels.filter(c => c.is_premium);
+  const newCh    = allChannels.filter(c => c.is_new);
+  const countries= new Set(allChannels.map(c => c.country).filter(Boolean));
+  document.getElementById('st-total').textContent    = allChannels.length;
+  document.getElementById('st-active').textContent   = active.length;
+  document.getElementById('st-premium').textContent  = premium.length;
+  document.getElementById('st-new').textContent      = newCh.length;
+  document.getElementById('st-countries').textContent= countries.size;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('channels-tbody');
+  document.getElementById('table-count').textContent =
+    `${filteredChannels.length} ta kanal ko'rsatilmoqda`;
+
+  if (!filteredChannels.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Kanallar topilmadi</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredChannels.map(ch => {
+    const country = COUNTRIES.find(c => c.code === ch.country);
+    const flagName = country ? `${country.flag} ${country.name}` : (ch.country || '—');
+    const cats = Array.isArray(ch.categories) ? ch.categories : [];
+
+    return `<tr>
+      <td>
+        <div class="channel-name-cell">
+          <img class="channel-logo"
+               src="${esc(ch.logo_url || '')}"
+               alt="${esc(ch.name)}"
+               onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2236%22><rect width=%2236%22 height=%2236%22 rx=%228%22 fill=%22%23161820%22/><text x=%2250%25%22 y=%2255%25%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22 font-size=%2216%22>📺</text></svg>'"/>
+          <div>
+            <div style="font-weight:600">${esc(ch.name)}</div>
+            <div style="font-size:.72rem;color:var(--muted)">${ch.language || '—'}</div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <span style="font-size:.8rem">${cats.length ? cats.join(', ') : '—'}</span>
+      </td>
+      <td style="font-size:.82rem">${flagName}</td>
+      <td>
+        <div class="url-cell" title="${esc(ch.stream_url || '')}">${esc(ch.stream_url || '—')}</div>
+      </td>
+      <td>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${ch.is_live    ? '<span class="badge badge-active">📡 LIVE</span>' : ''}
+          ${ch.is_premium ? '<span class="badge badge-popular">⭐ Premium</span>' : ''}
+          ${ch.is_new     ? '<span class="badge" style="background:rgba(255,95,109,.12);color:var(--red)">🆕 NEW</span>' : ''}
+          ${!ch.is_live && !ch.is_premium && !ch.is_new ? '<span class="badge badge-inactive">Oddiy</span>' : ''}
+        </div>
+      </td>
+      <td>
+        <div class="actions-cell">
+          <button class="icon-btn" onclick='openEdit(${JSON.stringify(JSON.stringify(ch))})' title="Tahrirlash">✏️</button>
+          <button class="icon-btn" onclick="toggleLive('${ch.id}',${ch.is_live})" title="${ch.is_live?'O\'chirish':'Yoqish'}">
+            ${ch.is_live ? '🔴' : '🟢'}
+          </button>
+          <button class="icon-btn del" onclick="deleteChannel('${ch.id}','${esc(ch.name)}')" title="O'chirish">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// Filter
+// ─────────────────────────────────────────────
+
+function filterTable() {
+  const search   = document.getElementById('search-input').value.toLowerCase();
+  const country  = document.getElementById('filter-country').value;
+  const category = document.getElementById('filter-category').value;
+  const type     = document.getElementById('filter-type').value;
+
+  filteredChannels = allChannels.filter(ch => {
+    const matchName    = !search   || ch.name.toLowerCase().includes(search);
+    const matchCountry = !country  || ch.country === country;
+    const cats = Array.isArray(ch.categories) ? ch.categories : [];
+    const matchCat     = !category || cats.includes(category);
+    const matchType    = !type     ||
+      (type === 'premium' && ch.is_premium) ||
+      (type === 'free'    && !ch.is_premium) ||
+      (type === 'new'     && ch.is_new);
+    return matchName && matchCountry && matchCat && matchType;
+  });
+  renderTable();
+}
+
+// ─────────────────────────────────────────────
+// Kanal qo'shish
+// ─────────────────────────────────────────────
+
+async function addChannel() {
+  const name   = document.getElementById('f-name').value.trim();
+  const stream = document.getElementById('f-stream').value.trim();
+  const cat    = document.getElementById('f-category').value;
+
+  clearMsg('add-msg');
+  if (!name || !stream) {
+    showMsg('add-msg', 'Kanal nomi va Stream URL majburiy!', true);
+    return;
+  }
+
+  const btn = document.getElementById('add-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saqlanmoqda…';
+
+  try {
+    const country = document.getElementById('f-country').value;
+    const ctObj   = COUNTRIES.find(c => c.code === country);
+
+    await sbFetch('channels', {
+      method: 'POST',
+      body: JSON.stringify({
+        name        : name,
+        stream_url  : stream,
+        logo_url    : document.getElementById('f-logo').value.trim(),
+        country     : country,
+        country_flag: ctObj ? ctObj.flag : '🌍',
+        language    : document.getElementById('f-language').value.trim(),
+        categories  : cat ? [cat] : [],
+        is_live     : document.getElementById('f-live').checked,
+        is_new      : document.getElementById('f-new').checked,
+        is_premium  : document.getElementById('f-premium').checked,
+        sort_order  : parseInt(document.getElementById('f-sort').value) || 0,
+      }),
+    });
+    showMsg('add-msg', `✓ "${name}" kanali muvaffaqiyatli qo'shildi!`);
+    clearAddForm();
+    loadChannels();
+    setTimeout(() => clearMsg('add-msg'), 4000);
+  } catch(e) {
+    showMsg('add-msg', 'Xatolik: ' + e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '➕ Kanal qo\'shish';
+  }
+}
+
+function clearAddForm() {
+  ['f-name','f-logo','f-stream','f-language'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-sort').value     = '0';
+  document.getElementById('f-category').value = '';
+  document.getElementById('f-country').value  = '';
+  document.getElementById('f-live').checked    = true;
+  document.getElementById('f-new').checked     = false;
+  document.getElementById('f-premium').checked = false;
+  document.getElementById('logo-preview').style.display = 'none';
+  document.getElementById('stream-test-result').textContent = '';
+}
+
+// ─────────────────────────────────────────────
+// Logo preview
+// ─────────────────────────────────────────────
+
+function previewLogo() {
+  const url = document.getElementById('f-logo').value.trim();
+  const img = document.getElementById('logo-preview');
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
+}
+
+// ─────────────────────────────────────────────
+// Stream URL test
+// ─────────────────────────────────────────────
+
+function testStream() {
+  const url = document.getElementById('f-stream').value.trim();
+  const res = document.getElementById('stream-test-result');
+  if (!url) { res.innerHTML = '<span style="color:var(--red)">URL kiriting!</span>'; return; }
+  res.innerHTML = '<span style="color:var(--muted)"><span class="spinner"></span> Tekshirilmoqda…</span>';
+  fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+    .then(r => {
+      res.innerHTML = r.ok
+        ? '<span style="color:var(--green)">✓ Stream ishlayapti!</span>'
+        : `<span style="color:var(--yellow)">⚠ Status: ${r.status}</span>`;
+    })
+    .catch(() => {
+      res.innerHTML = '<span style="color:var(--yellow)">⚠ CORS yoki URL noto\'g\'ri (lekin ba\'zi streamlar ishlashi mumkin)</span>';
+    });
+}
+
+// ─────────────────────────────────────────────
+// Tahrirlash
+// ─────────────────────────────────────────────
+
+function openEdit(jsonStr) {
+  const ch = JSON.parse(jsonStr);
+  document.getElementById('e-id').value       = ch.id;
+  document.getElementById('e-name').value     = ch.name || '';
+  document.getElementById('e-logo').value     = ch.logo_url || '';
+  document.getElementById('e-stream').value   = ch.stream_url || '';
+  document.getElementById('e-language').value = ch.language || '';
+  document.getElementById('e-sort').value     = ch.sort_order || 0;
+  document.getElementById('e-live').checked    = ch.is_live;
+  document.getElementById('e-new').checked     = ch.is_new;
+  document.getElementById('e-premium').checked = ch.is_premium;
+
+  const cats = Array.isArray(ch.categories) ? ch.categories : [];
+  document.getElementById('e-category').value = cats[0] || '';
+  document.getElementById('e-country').value  = ch.country || '';
+
+  clearMsg('edit-msg');
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function closeEdit() {
+  document.getElementById('edit-modal').classList.remove('show');
+}
+
+async function saveChannel() {
+  const id = document.getElementById('e-id').value;
+  clearMsg('edit-msg');
+  try {
+    const country = document.getElementById('e-country').value;
+    const ctObj   = COUNTRIES.find(c => c.code === country);
+    const cat     = document.getElementById('e-category').value;
+
+    await sbFetch(`channels?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name        : document.getElementById('e-name').value.trim(),
+        logo_url    : document.getElementById('e-logo').value.trim(),
+        stream_url  : document.getElementById('e-stream').value.trim(),
+        language    : document.getElementById('e-language').value.trim(),
+        sort_order  : parseInt(document.getElementById('e-sort').value) || 0,
+        is_live     : document.getElementById('e-live').checked,
+        is_new      : document.getElementById('e-new').checked,
+        is_premium  : document.getElementById('e-premium').checked,
+        country     : country,
+        country_flag: ctObj ? ctObj.flag : '🌍',
+        categories  : cat ? [cat] : [],
+      }),
+    });
+    showMsg('edit-msg', '✓ Saqlandi!');
+    setTimeout(() => { closeEdit(); loadChannels(); }, 1200);
+  } catch(e) {
+    showMsg('edit-msg', 'Xatolik: ' + e.message, true);
+  }
+}
+
+// ─────────────────────────────────────────────
+// LIVE toggle
+// ─────────────────────────────────────────────
+
+async function toggleLive(id, current) {
+  try {
+    await sbFetch(`channels?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_live: !current }),
+    });
+    loadChannels();
+  } catch(e) { alert('Xatolik: ' + e.message); }
+}
+
+// ─────────────────────────────────────────────
+// O'chirish
+// ─────────────────────────────────────────────
+
+async function deleteChannel(id, name) {
+  if (!confirm(`"${name}" kanalni o'chirishni tasdiqlaysizmi?`)) return;
+  try {
+    await sbFetch(`channels?id=eq.${id}`, { method: 'DELETE' });
+    loadChannels();
+  } catch(e) { alert('Xatolik: ' + e.message); }
+}
+
+// ─────────────────────────────────────────────
+// Form toggle
+// ─────────────────────────────────────────────
+
+function toggleAddForm() {
+  const body = document.getElementById('add-form-body');
+  const btn  = document.getElementById('toggle-form-btn');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    btn.textContent = '▼ Yashirish';
+  } else {
+    body.style.display = 'none';
+    btn.textContent = '▶ Ko\'rsatish';
+  }
+}
+
+// ─────────────────────────────────────────────
+// Modal yopish
+// ─────────────────────────────────────────────
+
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeEdit();
+});
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  populateCountryDropdowns();
+  loadChannels();
+});
+</script>
+</body>
+</html>
