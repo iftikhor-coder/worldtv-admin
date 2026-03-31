@@ -8,25 +8,94 @@
 // ─────────────────────────────────────────────
 
 const ADMIN_CONFIG = {
-  SUPABASE_URL : 'https://wmymjjbmbkdubgzvcvyg.supabase.co',
-  SERVICE_KEY  : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndteW1qamJtYmtkdWJnenZjdnlnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDM3NTEyMywiZXhwIjoyMDg5OTUxMTIzfQ.epo_yzHjeNrlDiv5tWD7p1rU7fKjmQI03hmBrgwzsaw',   // Supabase → Settings → API → service_role
-  ADMIN_PASSWORD: 'worldtv_admin_2025',     // Admin panel paroli
-  SESSION_KEY  : 'worldtv_admin_session',
+  SUPABASE_URL  : 'https://wmymjjbmbkdubgzvcvyg.supabase.co',
+  SERVICE_KEY   : 'YOUR_SERVICE_ROLE_KEY',
+  ADMIN_PASSWORD: 'worldtv_admin_2025',
+  SESSION_KEY   : 'worldtv_admin_session',
 };
 
 // ─────────────────────────────────────────────
-// AUTH — kirish tekshiruvi
+// SIDEBAR — barcha sahifalar uchun bir xil
+// Yangi sahifa qo'shilsa — faqat shu yerda
+// ─────────────────────────────────────────────
+
+const SIDEBAR_LINKS = [
+  {
+    section: 'Asosiy',
+    items: [
+      { icon: '📊', label: 'Dashboard',        href: 'index.html'              },
+      { icon: '👥', label: 'Foydalanuvchilar', href: 'users.html',    badge: '' },
+      { icon: '📺', label: 'Kanallar',         href: 'channels.html'           },
+      { icon: '📈', label: 'Analytics',        href: '#'                        },
+    ],
+  },
+  {
+    section: 'Moliya',
+    items: [
+      { icon: '💳', label: 'Obuna narxlari',   href: 'subscription-plans.html' },
+      { icon: '📊', label: 'Daromadlar',        href: '#'                       },
+    ],
+  },
+  {
+    section: 'Tizim',
+    items: [
+      { icon: '🔔', label: 'Bildirishnomalar', href: '#',               badge: '3'  },
+      { icon: '💬', label: 'Feedbacklar',      href: 'feedbacks.html', badge: ''   },
+      { icon: '⚙️', label: 'Sozlamalar',       href: '#'                           },
+      { icon: '📝', label: 'Loglar',           href: '#'                           },
+    ],
+  },
+];
+
+function buildSidebar() {
+  const current  = window.location.pathname.split('/').pop() || 'index.html';
+  const sections = SIDEBAR_LINKS.map(sec => {
+    const items = sec.items.map(item => {
+      const isActive = item.href === current;
+      const badge    = item.badge !== undefined
+        ? `<span class="nav-badge" id="badge-${item.label.replace(/\s/g,'')}">${item.badge}</span>`
+        : '';
+      return `
+        <a class="nav-item ${isActive ? 'active' : ''}" href="${item.href}">
+          <span class="icon">${item.icon}</span> ${item.label}${badge}
+        </a>`;
+    }).join('');
+    return `
+      <div class="nav-section">
+        <div class="nav-section-label">${sec.section}</div>
+        ${items}
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="sidebar-logo">
+      <div class="logo-icon">W</div>
+      <div class="logo-text">World<span>TV</span></div>
+      <span class="logo-badge">Admin</span>
+    </div>
+    ${sections}
+    <div class="sidebar-footer">
+      <div class="admin-card">
+        <div class="admin-avatar">A</div>
+        <div>
+          <div class="admin-name">Admin</div>
+          <div class="admin-role">Super Administrator</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="adminLogout()">🚪 Chiqish</button>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// AUTH
 // ─────────────────────────────────────────────
 
 function isAuthenticated() {
-  const session = sessionStorage.getItem(ADMIN_CONFIG.SESSION_KEY);
-  return session === 'authenticated';
+  return sessionStorage.getItem(ADMIN_CONFIG.SESSION_KEY) === 'authenticated';
 }
 
 function requireAuth() {
-  if (!isAuthenticated()) {
-    window.location.href = 'login.html';
-  }
+  if (!isAuthenticated()) window.location.href = 'login.html';
 }
 
 function adminLogin(password) {
@@ -44,7 +113,7 @@ function adminLogout() {
 }
 
 // ─────────────────────────────────────────────
-// SUPABASE API helper
+// SUPABASE API
 // ─────────────────────────────────────────────
 
 const SB_HEADERS = {
@@ -73,48 +142,32 @@ async function sbFetch(endpoint, opts = {}) {
 }
 
 // ─────────────────────────────────────────────
-// SIDEBAR — mobile toggle
-// ─────────────────────────────────────────────
-
-function initSidebar() {
-  const toggle = document.getElementById('menu-toggle');
-  const sidebar = document.getElementById('sidebar');
-  if (toggle && sidebar) {
-    toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
-    // Tashqariga bosganida yopish
-    document.addEventListener('click', (e) => {
-      if (sidebar.classList.contains('open') &&
-          !sidebar.contains(e.target) &&
-          e.target !== toggle) {
-        sidebar.classList.remove('open');
-      }
-    });
-  }
-}
-
-// ─────────────────────────────────────────────
 // CLOCK
 // ─────────────────────────────────────────────
 
 function initClock() {
   const el = document.getElementById('clock');
   if (!el) return;
-  const update = () => {
-    el.textContent = new Date().toLocaleTimeString('uz-UZ');
-  };
+  const update = () => { el.textContent = new Date().toLocaleTimeString('uz-UZ'); };
   update();
   setInterval(update, 1000);
 }
 
 // ─────────────────────────────────────────────
-// ACTIVE NAV — joriy sahifani belgilash
+// SIDEBAR mobile toggle
 // ─────────────────────────────────────────────
 
-function initActiveNav() {
-  const current = window.location.pathname.split('/').pop();
-  document.querySelectorAll('.nav-item').forEach(item => {
-    const href = item.getAttribute('href') || '';
-    item.classList.toggle('active', href === current);
+function initSidebarToggle() {
+  const toggle  = document.getElementById('menu-toggle');
+  const sidebar = document.getElementById('sidebar');
+  if (!toggle || !sidebar) return;
+  toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+  document.addEventListener('click', e => {
+    if (sidebar.classList.contains('open') &&
+        !sidebar.contains(e.target) &&
+        e.target !== toggle) {
+      sidebar.classList.remove('open');
+    }
   });
 }
 
@@ -124,16 +177,13 @@ function initActiveNav() {
 
 function esc(s) {
   return String(s || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function showMsg(elId, text, isError = false) {
   const el = document.getElementById(elId);
-  if (!el) return;
-  el.innerHTML = `<div class="${isError ? 'err-msg' : 'suc-msg'}">${text}</div>`;
+  if (el) el.innerHTML = `<div class="${isError ? 'err-msg' : 'suc-msg'}">${text}</div>`;
 }
 
 function clearMsg(elId) {
@@ -142,16 +192,36 @@ function clearMsg(elId) {
 }
 
 // ─────────────────────────────────────────────
+// FEEDBACK BADGE — yangi xabarlar sonini ko'rsatish
+// ─────────────────────────────────────────────
+
+async function loadFeedbackBadge() {
+  try {
+    const data = await sbFetch('feedbacks?select=id&is_read=eq.false');
+    const count = data?.length || 0;
+    const badge = document.getElementById('badgeFeedbacklar');
+    if (badge) {
+      badge.textContent = count > 0 ? count : '';
+      badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+  } catch(e) { /* jimgina o'tkazib yuboriladi */ }
+}
+
+// ─────────────────────────────────────────────
 // INIT — sahifa yuklanganda
 // ─────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Login sahifasi emas bo'lsa — auth tekshirish
   const isLoginPage = window.location.pathname.includes('login');
   if (!isLoginPage) requireAuth();
 
-  initSidebar();
-  initClock();
-  initActiveNav();
-});
+  // Sidebar'ni render qilish
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.innerHTML = buildSidebar();
 
+  initSidebarToggle();
+  initClock();
+
+  // Feedback badge'ni yuklash (login sahifasidan tashqari)
+  if (!isLoginPage) loadFeedbackBadge();
+});
