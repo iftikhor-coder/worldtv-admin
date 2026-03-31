@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WorldTV Admin — Feedbacklar</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <script src="js/admin.js" defer></script>
+  <style>
+    .feedback-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
+      transition: border-color .15s; cursor: pointer;
+    }
+    .feedback-card:hover { border-color: var(--accent); }
+    .feedback-card.unread { border-left: 3px solid var(--accent); }
+
+    .fb-header { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .fb-avatar {
+      width:40px; height:40px; border-radius:10px;
+      background: linear-gradient(135deg, var(--accent), #a78bff);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; color:#fff; font-size:.9rem; flex-shrink:0;
+    }
+    .fb-name { font-weight:600; font-size:.9rem; }
+    .fb-email { font-size:.75rem; color:var(--muted); margin-top:2px; }
+    .fb-meta { margin-left:auto; text-align:right; }
+    .fb-time { font-size:.72rem; color:var(--muted); font-family:var(--font-mono); }
+    .fb-device { font-size:.7rem; color:var(--muted); margin-top:3px; }
+    .fb-message {
+      font-size:.85rem; color:var(--text); line-height:1.6;
+      background:var(--surface2); border-radius:8px; padding:12px 14px;
+    }
+    .fb-actions { display:flex; gap:8px; margin-top:12px; }
+
+    /* USER PROFILE MODAL */
+    .profile-modal { width: min(640px, 95vw); }
+    .profile-header {
+      display:flex; align-items:center; gap:16px;
+      padding:20px; border-bottom:1px solid var(--border);
+    }
+    .profile-big-avatar {
+      width:64px; height:64px; border-radius:16px;
+      background:linear-gradient(135deg,var(--accent),#a78bff);
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.6rem; font-weight:700; color:#fff; flex-shrink:0;
+    }
+    .profile-name { font-size:1.1rem; font-weight:700; }
+    .profile-email { font-size:.82rem; color:var(--muted); margin-top:3px; }
+
+    .info-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:10px;
+      padding:16px 20px;
+    }
+    .info-item {
+      background:var(--surface2); border-radius:10px; padding:12px 14px;
+    }
+    .info-label { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .info-value { font-size:.85rem; font-weight:600; margin-top:4px; }
+
+    .premium-grid {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+      padding:0 20px 16px;
+    }
+    .premium-btn {
+      padding:10px 6px; border-radius:10px; border:1px solid var(--border);
+      background:var(--surface2); color:var(--text);
+      font-family:var(--font-ui); font-size:.78rem; font-weight:600;
+      cursor:pointer; text-align:center; transition:.15s;
+    }
+    .premium-btn:hover { background:var(--accent-glow); border-color:var(--accent); color:var(--accent); }
+
+    .action-divider {
+      border:none; border-top:1px solid var(--border);
+      margin:0 20px 16px;
+    }
+    .modal-actions { padding:0 20px 20px; display:flex; gap:10px; }
+
+    .status-dot {
+      display:inline-block; width:8px; height:8px;
+      border-radius:50%; margin-right:5px;
+    }
+    .status-online { background:var(--green); }
+    .status-offline { background:var(--muted); }
+
+    @media(max-width:520px){
+      .info-grid { grid-template-columns:1fr; }
+      .premium-grid { grid-template-columns:repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR — admin.js tomonidan to'ldiriladi -->
+<aside class="sidebar" id="sidebar"></aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div>
+        <div class="topbar-title">Feedbacklar</div>
+        <div class="topbar-sub">Foydalanuvchi murojaatlari</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="loadFeedbacks()">↻ Yangilash</button>
+      <div class="topbar-time" id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <div class="stat-val blue" id="st-total">—</div>
+        <div class="stat-lbl">Jami murojaatlar</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val red" id="st-unread">—</div>
+        <div class="stat-lbl">O'qilmagan</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val green" id="st-read">—</div>
+        <div class="stat-lbl">O'qilgan</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val yellow" id="st-today">—</div>
+        <div class="stat-lbl">Bugun</div>
+      </div>
+    </div>
+
+    <!-- FILTER -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <select class="inp" id="filter-read" onchange="renderFeedbacks()"
+              style="max-width:180px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-family:var(--font-ui)">
+        <option value="">Barchasi</option>
+        <option value="false">O'qilmagan</option>
+        <option value="true">O'qilgan</option>
+      </select>
+      <input class="inp" id="search-fb" placeholder="🔍 Ism yoki email..."
+             oninput="renderFeedbacks()" style="max-width:260px"/>
+    </div>
+
+    <!-- FEEDBACKLAR RO'YXATI -->
+    <div id="fb-list">
+      <div style="text-align:center;padding:40px;color:var(--muted)">
+        <span class="spinner"></span> Yuklanmoqda…
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOYDALANUVCHI PROFILI MODAL -->
+<div class="modal-bg" id="user-modal">
+  <div class="modal profile-modal" style="padding:0;overflow:hidden">
+
+    <div class="profile-header">
+      <div class="profile-big-avatar" id="pm-avatar">A</div>
+      <div style="flex:1">
+        <div class="profile-name" id="pm-name">—</div>
+        <div class="profile-email" id="pm-email">—</div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap" id="pm-badges"></div>
+      </div>
+      <button onclick="closeUserModal()"
+              style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer">✕</button>
+    </div>
+
+    <!-- Info grid -->
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Qurilma</div>
+        <div class="info-value" id="pm-device">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Davlat</div>
+        <div class="info-value" id="pm-country">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Holat</div>
+        <div class="info-value" id="pm-status">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Murojaat vaqti</div>
+        <div class="info-value" id="pm-time">—</div>
+      </div>
+      <div class="info-item" style="grid-column:1/-1">
+        <div class="info-label">Murojaat matni</div>
+        <div class="info-value" id="pm-message" style="font-weight:400;line-height:1.5;margin-top:6px">—</div>
+      </div>
+    </div>
+
+    <hr class="action-divider"/>
+
+    <!-- Premium berish -->
+    <div style="padding:0 20px 10px">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px;font-weight:600">
+        🎁 BEPUL PREMIUM BERISH:
+      </div>
+      <div class="premium-grid">
+        <button class="premium-btn" onclick="givePremium(7)">1 hafta</button>
+        <button class="premium-btn" onclick="givePremium(30)">1 oy</button>
+        <button class="premium-btn" onclick="givePremium(90)">3 oy</button>
+        <button class="premium-btn" onclick="givePremium(365)">1 yil</button>
+      </div>
+    </div>
+
+    <hr class="action-divider"/>
+
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="block-btn" onclick="toggleBlock()">
+        🚫 Bloklash
+      </button>
+      <button class="btn btn-ghost" onclick="markAsRead()" id="read-btn">
+        ✓ O'qildi deb belgilash
+      </button>
+      <button class="btn btn-ghost" onclick="closeUserModal()" style="margin-left:auto">
+        Yopish
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+
+let allFeedbacks  = [];
+let currentFeedback = null;
+
+// ─────────────────────────────────────────────
+// Feedbacklarni yuklash
+// ─────────────────────────────────────────────
+
+async function loadFeedbacks() {
+  document.getElementById('fb-list').innerHTML =
+    '<div style="text-align:center;padding:40px;color:var(--muted)"><span class="spinner"></span> Yuklanmoqda…</div>';
+  try {
+    allFeedbacks = await sbFetch(
+      'feedbacks?select=*&order=created_at.desc'
+    ) || [];
+    updateStats();
+    renderFeedbacks();
+  } catch(e) {
+    document.getElementById('fb-list').innerHTML =
+      `<div style="color:var(--red);padding:20px">Xatolik: ${e.message}</div>`;
+  }
+}
+
+function updateStats() {
+  const today   = new Date().toDateString();
+  const unread  = allFeedbacks.filter(f => !f.is_read);
+  const read    = allFeedbacks.filter(f => f.is_read);
+  const todayFb = allFeedbacks.filter(f =>
+    new Date(f.created_at).toDateString() === today
+  );
+  document.getElementById('st-total').textContent  = allFeedbacks.length;
+  document.getElementById('st-unread').textContent = unread.length;
+  document.getElementById('st-read').textContent   = read.length;
+  document.getElementById('st-today').textContent  = todayFb.length;
+}
+
+function renderFeedbacks() {
+  const filterRead = document.getElementById('filter-read').value;
+  const search     = document.getElementById('search-fb').value.toLowerCase();
+
+  const list = allFeedbacks.filter(f => {
+    const matchRead = !filterRead || String(f.is_read) === filterRead;
+    const matchSearch = !search ||
+      f.display_name?.toLowerCase().includes(search) ||
+      f.email?.toLowerCase().includes(search);
+    return matchRead && matchSearch;
+  });
+
+  const container = document.getElementById('fb-list');
+
+  if (!list.length) {
+    container.innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--muted)">Murojaatlar topilmadi</div>';
+    return;
+  }
+
+  container.innerHTML = list.map(f => `
+    <div class="feedback-card ${f.is_read ? '' : 'unread'}"
+         onclick="openUserModal(${JSON.stringify(JSON.stringify(f))})">
+      <div class="fb-header">
+        <div class="fb-avatar">${(f.display_name||'U')[0].toUpperCase()}</div>
+        <div>
+          <div class="fb-name">
+            ${esc(f.display_name || 'Noma\'lum')}
+            ${!f.is_read ? '<span class="badge badge-active" style="margin-left:6px;font-size:.65rem">Yangi</span>' : ''}
+          </div>
+          <div class="fb-email">${esc(f.email)}</div>
+        </div>
+        <div class="fb-meta">
+          <div class="fb-time">${formatDate(f.created_at)}</div>
+          <div class="fb-device">📱 ${esc(f.device_type || '—')}</div>
+        </div>
+      </div>
+      <div class="fb-message">${esc(f.message)}</div>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+// Foydalanuvchi modal
+// ─────────────────────────────────────────────
+
+function openUserModal(jsonStr) {
+  const f = JSON.parse(jsonStr);
+  currentFeedback = f;
+
+  document.getElementById('pm-avatar').textContent  = (f.display_name||'U')[0].toUpperCase();
+  document.getElementById('pm-name').textContent    = f.display_name || 'Noma\'lum';
+  document.getElementById('pm-email').textContent   = f.email || '—';
+  document.getElementById('pm-device').textContent  = f.device_type || '—';
+  document.getElementById('pm-country').textContent = f.country || '—';
+  document.getElementById('pm-message').textContent = f.message || '—';
+  document.getElementById('pm-time').textContent    = formatDate(f.created_at);
+
+  // Status
+  document.getElementById('pm-status').innerHTML =
+    `<span class="status-dot ${f.is_read ? 'status-offline' : 'status-online'}"></span>
+     ${f.is_read ? 'O\'qilgan' : 'O\'qilmagan'}`;
+
+  // Badges
+  const badges = document.getElementById('pm-badges');
+  badges.innerHTML = `
+    <span class="badge ${f.is_read ? 'badge-inactive' : 'badge-active'}">
+      ${f.is_read ? '✓ O\'qilgan' : '● Yangi'}
+    </span>`;
+
+  // Read tugmasi holati
+  const readBtn = document.getElementById('read-btn');
+  readBtn.style.display = f.is_read ? 'none' : 'inline-flex';
+
+  document.getElementById('user-modal').classList.add('show');
+
+  // Avtomatik o'qildi deb belgilash
+  if (!f.is_read) autoMarkRead(f.id);
+}
+
+function closeUserModal() {
+  document.getElementById('user-modal').classList.remove('show');
+  currentFeedback = null;
+}
+
+// ─────────────────────────────────────────────
+// O'qildi deb belgilash
+// ─────────────────────────────────────────────
+
+async function autoMarkRead(id) {
+  try {
+    await sbFetch(`feedbacks?id=eq.${id}`, {
+      method : 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body   : JSON.stringify({ is_read: true }),
+    });
+    // Lokal state yangilash
+    const fb = allFeedbacks.find(f => f.id === id);
+    if (fb) fb.is_read = true;
+    updateStats();
+    renderFeedbacks();
+    // Badge yangilash
+    loadFeedbackBadge();
+  } catch(e) { /* jimgina */ }
+}
+
+async function markAsRead() {
+  if (!currentFeedback) return;
+  await autoMarkRead(currentFeedback.id);
+  document.getElementById('read-btn').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+// Premium berish
+// ─────────────────────────────────────────────
+
+async function givePremium(days) {
+  if (!currentFeedback) return;
+  if (!confirm(`${currentFeedback.display_name} ga ${days} kunlik premium berilsinmi?`)) return;
+
+  try {
+    const until = new Date();
+    until.setDate(until.getDate() + days);
+
+    // subscriptions jadvaliga qo'shish
+    await sbFetch('subscriptions', {
+      method: 'POST',
+      body  : JSON.stringify({
+        firebase_uid: currentFeedback.user_uid,
+        email       : currentFeedback.email,
+        plan_name   : `Admin tomonidan ${days} kun`,
+        duration_days: days,
+        price_paid  : 0,
+        currency    : 'USD',
+        starts_at   : new Date().toISOString(),
+        expires_at  : until.toISOString(),
+        is_active   : true,
+      }),
+    });
+
+    showToast(`✅ ${currentFeedback.display_name} ga ${days} kunlik premium berildi!`);
+  } catch(e) {
+    showToast('❌ Xatolik: ' + e.message);
+  }
+}
+
+// ─────────────────────────────────────────────
+// Bloklash
+// ─────────────────────────────────────────────
+
+async function toggleBlock() {
+  if (!currentFeedback) return;
+  const action = confirm(`${currentFeedback.display_name} ni bloklashni tasdiqlaysizmi?`);
+  if (!action) return;
+
+  try {
+    await sbFetch(`user_profiles?user_uid=eq.${currentFeedback.user_uid}`, {
+      method: 'PATCH',
+      body  : JSON.stringify({ is_blocked: true }),
+    });
+    showToast(`🚫 ${currentFeedback.display_name} bloklandi!`);
+    closeUserModal();
+  } catch(e) {
+    showToast('❌ Xatolik: ' + e.message);
+  }
+}
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleString('uz-UZ', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function showToast(msg) {
+  let toast = document.getElementById('admin-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'admin-toast';
+    toast.style.cssText = `
+      position:fixed;bottom:28px;right:28px;z-index:999;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:10px;padding:14px 20px;font-size:.85rem;color:var(--text);
+      box-shadow:0 8px 32px rgba(0,0,0,.4);transition:opacity .3s;opacity:0;max-width:320px;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+}
+
+// Modal tashqariga bosilsa yopish
+document.getElementById('user-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeUserModal();
+});
+
+// Init
+document.addEventListener('DOMContentLoaded', loadFeedbacks);
+</script>
+</body>
+</html>
