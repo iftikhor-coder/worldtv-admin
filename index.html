@@ -18,6 +18,24 @@
       .charts-row { grid-template-columns:1fr; }
       .bottom-row  { grid-template-columns:1fr; }
     }
+
+    /* ── Toggle Switch ── */
+    .toggle-switch { position:relative; display:inline-block; width:52px; height:28px; cursor:pointer; flex-shrink:0; }
+    .toggle-switch input { opacity:0; width:0; height:0; }
+    .toggle-slider {
+      position:absolute; inset:0;
+      background:var(--border); border-radius:28px;
+      transition:.3s; border:1px solid rgba(255,255,255,.05);
+    }
+    .toggle-slider::before {
+      content:''; position:absolute;
+      width:20px; height:20px; border-radius:50%;
+      background:#fff; left:3px; bottom:3px;
+      transition:.3s; box-shadow:0 1px 4px rgba(0,0,0,.3);
+    }
+    .toggle-switch input:checked + .toggle-slider { background:var(--green); }
+    .toggle-switch input:checked + .toggle-slider::before { transform:translateX(24px); }
+    .toggle-switch input:disabled + .toggle-slider { opacity:.5; cursor:not-allowed; }
   </style>
 </head>
 <body>
@@ -32,7 +50,7 @@
     <div class="nav-section-label">Asosiy</div>
     <a class="nav-item" href="index.html"><span class="icon">📊</span> Dashboard</a>
     <a class="nav-item" href="#"><span class="icon">👥</span> Foydalanuvchilar <span class="nav-badge">12.5k</span></a>
-    <a class="nav-item" href="channels.html"><span class="icon">📺</span> Kanallar</a>
+    <a class="nav-item" href="#"><span class="icon">📺</span> Kanallar</a>
     <a class="nav-item" href="#"><span class="icon">📈</span> Analytics</a>
   </div>
   <div class="nav-section">
@@ -97,6 +115,49 @@
       </div>
     </div>
 
+    <!-- ══════════════════════════════════════════
+         TIZIM BOSHQARUVI — Feature Flags
+    ══════════════════════════════════════════ -->
+    <div class="section-card" style="margin-bottom:28px">
+      <div class="section-card-header">
+        <div class="section-title">⚙️ Tizim boshqaruvi</div>
+        <span style="font-size:.78rem;color:var(--muted)">
+          O'zgarishlar APK ilovada <strong style="color:var(--green)">darhol</strong> ta'sir qiladi
+        </span>
+      </div>
+      <div style="padding:20px">
+
+        <!-- Obuna toggle -->
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    padding:16px;background:var(--surface2);border-radius:12px;
+                    border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:44px;height:44px;border-radius:10px;
+                        background:rgba(108,123,255,.12);
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:1.3rem">💳</div>
+            <div>
+              <div style="font-weight:600;font-size:.92rem">Obuna bo'limi</div>
+              <div style="font-size:.78rem;color:var(--muted);margin-top:3px">
+                Faol bo'lsa — APK ichida obuna sahifasi ko'rinadi va pulli kanallar qulflangadi
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span id="sub-flag-label" style="font-size:.8rem;font-family:var(--font-mono)">
+              <span class="spinner"></span>
+            </span>
+            <!-- Toggle switch -->
+            <label class="toggle-switch" title="Obuna bo'limini yoqish/o'chirish">
+              <input type="checkbox" id="sub-flag-toggle" onchange="setSubscriptionFlag(this.checked)" disabled/>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <div class="charts-row">
       <div class="chart-card">
         <div class="chart-header">
@@ -149,5 +210,91 @@
   </div>
 </div>
 
+<script>
+// ── Feature Flag: subscription_enabled ──────────────────────────
+
+async function loadSubscriptionFlag() {
+  try {
+    const data = await sbFetch('feature_flags?key=eq.subscription_enabled&select=key,value');
+    const flag  = data?.[0];
+    const enabled = flag?.value ?? false;
+
+    const toggle = document.getElementById('sub-flag-toggle');
+    const label  = document.getElementById('sub-flag-label');
+
+    toggle.checked  = enabled;
+    toggle.disabled = false;
+    label.innerHTML = enabled
+      ? '<span style="color:var(--green)">● Faol</span>'
+      : '<span style="color:var(--muted)">● O\'chirilgan</span>';
+  } catch(e) {
+    document.getElementById('sub-flag-label').innerHTML =
+      '<span style="color:var(--red)">Xatolik</span>';
+  }
+}
+
+async function setSubscriptionFlag(enabled) {
+  const toggle = document.getElementById('sub-flag-toggle');
+  const label  = document.getElementById('sub-flag-label');
+
+  toggle.disabled = true;
+  label.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    await sbFetch('feature_flags?key=eq.subscription_enabled', {
+      method : 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body   : JSON.stringify({
+        value      : enabled,
+        updated_at : new Date().toISOString(),
+      }),
+    });
+
+    label.innerHTML = enabled
+      ? '<span style="color:var(--green)">● Faol</span>'
+      : '<span style="color:var(--muted)">● O\'chirilgan</span>';
+
+    // Toast xabar
+    showToast(
+      enabled
+        ? '✅ Obuna bo\'limi yoqildi — APK da ko\'rinadi'
+        : '🔕 Obuna bo\'limi o\'chirildi — APK dan yashirildi'
+    );
+  } catch(e) {
+    // Xatolikda orqaga qaytarish
+    toggle.checked = !enabled;
+    label.innerHTML = '<span style="color:var(--red)">Xatolik!</span>';
+  } finally {
+    toggle.disabled = false;
+  }
+}
+
+// ── Toast xabar ────────────────────────────────────────────────
+
+function showToast(msg) {
+  let toast = document.getElementById('admin-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'admin-toast';
+    toast.style.cssText = `
+      position:fixed; bottom:28px; right:28px; z-index:999;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; padding:14px 20px;
+      font-size:.85rem; color:var(--text);
+      box-shadow:0 8px 32px rgba(0,0,0,.4);
+      transition:opacity .3s; opacity:0;
+      max-width:320px;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+}
+
+// ── Init ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', loadSubscriptionFlag);
+</script>
 </body>
 </html>
