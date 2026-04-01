@@ -1256,7 +1256,17 @@ document.getElementById('account-modal').addEventListener('click', e=>{
 });
 
 // INIT
-document.addEventListener('DOMContentLoaded', loadAll);
+function checkUrlParams() {
+  const uid = new URLSearchParams(window.location.search).get('uid');
+  if (!uid) return;
+  const user = allUsers.find(u => u.user_uid === uid);
+  if (user) openAccount(JSON.stringify(user));
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadAll();
+  checkUrlParams();
+});
 </script>
 </body>
 </html>
