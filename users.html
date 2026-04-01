@@ -200,6 +200,9 @@
       <button class="view-btn" id="btn-all" onclick="switchView('all')">
         👥 Barcha foydalanuvchilar
       </button>
+      <button class="view-btn" id="btn-maps" onclick="switchView('maps')">
+        🗺️ Xarita (Maps)
+      </button>
     </div>
 
     <!-- ══ DAVLATLAR PANE ══ -->
@@ -253,6 +256,22 @@
           </table>
         </div>
         <div class="pagination" id="cu-pagination"></div>
+      </div>
+    </div>
+
+    <!-- ══ XARITA PANE ══ -->
+    <div id="pane-maps" style="display:none">
+      <div class="section-card" style="padding:0;overflow:hidden">
+        <div class="section-card-header">
+          <div class="section-title">🗺️ Barcha foydalanuvchilar xaritada</div>
+          <span style="font-size:.78rem;color:var(--muted)" id="maps-count">—</span>
+        </div>
+        <div id="all-users-map" style="height:600px"></div>
+        <div style="display:flex;gap:6px;padding:12px 20px;background:var(--surface2);border-top:1px solid var(--border)">
+          <span style="font-size:.78rem;color:var(--muted);margin-right:8px">Xarita turi:</span>
+          <button class="layer-btn active" id="global-btn-satellite" onclick="setGlobalLayer('satellite')">🛰️ Sun'iy yo'ldosh</button>
+          <button class="layer-btn" id="global-btn-hybrid" onclick="setGlobalLayer('hybrid')">🗺️ Gibrid</button>
+        </div>
       </div>
     </div>
 
@@ -623,11 +642,14 @@ function updateStats() {
 function switchView(view) {
   document.getElementById('pane-countries').style.display    = view==='countries' ? 'block' : 'none';
   document.getElementById('pane-country-users').style.display= 'none';
-  document.getElementById('pane-all').style.display          = view==='all' ? 'block' : 'none';
+  document.getElementById('pane-all').style.display          = view==='all'  ? 'block' : 'none';
+  document.getElementById('pane-maps').style.display         = view==='maps' ? 'block' : 'none';
   document.getElementById('btn-countries').classList.toggle('active', view==='countries');
   document.getElementById('btn-all').classList.toggle('active', view==='all');
-  document.getElementById('topbar-sub').textContent =
-    view==='countries' ? 'Davlatlar bo\'yicha' : 'Barcha foydalanuvchilar';
+  document.getElementById('btn-maps').classList.toggle('active', view==='maps');
+  const labels = {countries:"Davlatlar bo'yicha", all:'Barcha foydalanuvchilar', maps:'Xarita (Maps)'};
+  document.getElementById('topbar-sub').textContent = labels[view] || '';
+  if (view === 'maps') initGlobalMap();
 }
 
 function refreshView() {
@@ -642,11 +664,10 @@ function renderCountryList(filter='') {
   const list = document.getElementById('country-list');
   const q    = filter.toLowerCase();
 
-  // Faqat foydalanuvchi bor davlatlar + alifbo tartib
-  const active = ALL_COUNTRIES.filter(c => {
-    const count = countryStats[c.code.toUpperCase()] || 0;
-    return count > 0 && (!q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
-  });
+  // Barcha 195 davlat — foydalanuvchi bolmasa ham korinadi
+  const active = ALL_COUNTRIES.filter(c =>
+    !q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
+  );
 
   if (!active.length) {
     list.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Topilmadi</div>';
@@ -655,6 +676,9 @@ function renderCountryList(filter='') {
 
   list.innerHTML = active.map(c => {
     const count = countryStats[c.code.toUpperCase()] || 0;
+    const countStyle = count > 0
+      ? 'background:var(--accent-glow);color:var(--accent);'
+      : 'background:var(--surface2);color:var(--muted);';
     return `
       <div class="country-row" onclick="openCountry('${c.code}','${c.name}')">
         <img class="country-flag-img"
@@ -662,7 +686,7 @@ function renderCountryList(filter='') {
              alt="${c.code}"
              onerror="this.style.display='none'"/>
         <span class="country-name">${esc(c.name)}</span>
-        <span class="country-count">${count}</span>
+        <span class="country-count" style="${countStyle}">${count}</span>
       </div>`;
   }).join('');
 }
@@ -1121,6 +1145,90 @@ function formatMinutes(mins) {
   if (mins < 60) return `${mins} daqiqa`;
   const h = Math.floor(mins/60), m = mins%60;
   return `${h} soat ${m>0?m+' daqiqa':''}`;
+}
+
+// ═══════════════════════════════════════════════
+// GLOBAL MAP — barcha foydalanuvchilar xaritada
+// ═══════════════════════════════════════════════
+
+let globalMap = null;
+let globalSatellite = null;
+let globalHybrid = null;
+
+function initGlobalMap() {
+  if (globalMap) { globalMap.remove(); globalMap = null; }
+
+  globalMap = L.map('all-users-map', { zoomControl:true }).setView([30, 20], 2);
+
+  const esriSat = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution:'© Esri', maxZoom:19 }
+  );
+  const gLabels = L.tileLayer(
+    'http://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}',
+    { subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20 }
+  );
+  globalSatellite = L.layerGroup([esriSat, gLabels]);
+
+  globalHybrid = L.tileLayer(
+    'http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    { subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, attribution:'© Google' }
+  );
+
+  globalSatellite.addTo(globalMap);
+
+  // Barcha foydalanuvchilar markerlarini qo'shish
+  const withCoords = allUsers.filter(u => u.latitude && u.longitude);
+  document.getElementById('maps-count').textContent =
+    `${withCoords.length} ta foydalanuvchi ko'rsatilmoqda`;
+
+  withCoords.forEach(u => {
+    const icon = L.divIcon({
+      html: `<div style="
+        width:28px;height:28px;border-radius:50%;
+        background:${u.is_online ? '#3ddc97' : '#6c7bff'};
+        border:2px solid #fff;
+        display:flex;align-items:center;justify-content:center;
+        font-size:12px;font-weight:700;color:#fff;
+        box-shadow:0 2px 6px rgba(0,0,0,.4);
+        cursor:pointer;
+      ">${(u.display_name||'U')[0].toUpperCase()}</div>`,
+      iconSize:[28,28], iconAnchor:[14,14],
+    });
+
+    const deviceIcon = u.device_type==='Smart TV' ? '📺' :
+                       u.device_type==='Tablet'   ? '📟' : '📱';
+    const isPremium  = u.premium_until && new Date(u.premium_until) > new Date();
+
+    L.marker([u.latitude, u.longitude], {icon})
+      .addTo(globalMap)
+      .bindPopup(`
+        <div style="min-width:180px;font-family:DM Sans,sans-serif">
+          <b style="font-size:.9rem">${esc(u.display_name||'—')}</b><br/>
+          <span style="font-size:.75rem;color:#888">${esc(u.email||'—')}</span><br/>
+          <hr style="margin:6px 0;border-color:#eee"/>
+          ${deviceIcon} ${esc(u.device_type||'—')}<br/>
+          🌍 ${esc(u.country||'—')} | 🌐 ${esc(u.ip_address||'—')}<br/>
+          ${u.is_online ? '<span style="color:#3ddc97">🟢 Online</span>' : '<span style="color:#888">⚫ Offline</span>'}
+          ${isPremium ? ' | <span style="color:#ffc15e">⭐ Premium</span>' : ''}
+        </div>
+      `);
+  });
+
+  setTimeout(() => globalMap.invalidateSize(), 300);
+}
+
+function setGlobalLayer(type) {
+  if (!globalMap) return;
+  if (type === 'satellite') {
+    globalMap.removeLayer(globalHybrid);
+    globalSatellite.addTo(globalMap);
+  } else {
+    globalMap.removeLayer(globalSatellite);
+    globalHybrid.addTo(globalMap);
+  }
+  document.getElementById('global-btn-satellite').classList.toggle('active', type==='satellite');
+  document.getElementById('global-btn-hybrid').classList.toggle('active', type==='hybrid');
 }
 
 function showToast(msg) {
