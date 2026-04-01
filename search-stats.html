@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WorldTV Admin — Qidiruv statistikasi</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/admin.js" defer></script>
+  <style>
+    /* Period filter */
+    .period-tab-row {
+      display:flex; gap:6px; margin-bottom:24px; flex-wrap:wrap;
+    }
+    .period-tab {
+      padding:7px 16px; border-radius:8px; border:1px solid var(--border);
+      background:var(--surface); color:var(--muted);
+      font-family:var(--font-ui); font-size:.82rem; font-weight:500;
+      cursor:pointer; transition:.15s;
+    }
+    .period-tab.active, .period-tab:hover {
+      background:var(--accent-glow); color:var(--accent);
+      border-color:rgba(108,123,255,.3);
+    }
+
+    /* Top queries table */
+    .rank-num {
+      width:28px; height:28px; border-radius:8px;
+      background:var(--surface2); display:flex;
+      align-items:center; justify-content:center;
+      font-family:var(--font-mono); font-size:.75rem;
+      font-weight:700; flex-shrink:0;
+    }
+    .rank-num.top1 { background:rgba(255,193,94,.15); color:var(--yellow); }
+    .rank-num.top2 { background:rgba(108,123,255,.15); color:var(--accent); }
+    .rank-num.top3 { background:rgba(61,220,151,.15);  color:var(--green); }
+
+    .query-bar-wrap {
+      flex:1; height:6px; background:var(--border);
+      border-radius:3px; overflow:hidden; margin:0 12px;
+    }
+    .query-bar-fill {
+      height:100%; border-radius:3px;
+      background:linear-gradient(90deg, var(--accent), #a78bff);
+      transition:width .6s ease;
+    }
+
+    /* Country grid */
+    .country-stat-grid {
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr));
+      gap:12px; margin-top:16px;
+    }
+    .country-stat-card {
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:12px; padding:14px 16px;
+      cursor:pointer; transition:.15s;
+    }
+    .country-stat-card:hover { border-color:var(--accent); }
+    .country-flag-big { font-size:1.8rem; }
+    .country-stat-name { font-weight:600; font-size:.88rem; margin-top:6px; }
+    .country-stat-count { font-family:var(--font-mono); font-size:.75rem; color:var(--muted); }
+
+    /* Country detail modal */
+    .country-detail-modal { width:min(700px, 95vw); max-height:80vh; overflow-y:auto; }
+    .query-chip {
+      display:inline-flex; align-items:center; gap:6px;
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:8px; padding:5px 10px;
+      font-size:.8rem; margin:4px;
+    }
+    .query-chip-count {
+      background:var(--accent-glow); color:var(--accent);
+      border-radius:4px; padding:1px 6px;
+      font-family:var(--font-mono); font-size:.7rem;
+    }
+
+    /* Device chart */
+    .charts-2col {
+      display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px;
+    }
+    @media(max-width:800px) {
+      .charts-2col { grid-template-columns:1fr; }
+      .country-stat-grid { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar"></aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div>
+        <div class="topbar-title">Qidiruv statistikasi</div>
+        <div class="topbar-sub">Foydalanuvchilar nima qidiryapti</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="loadStats()">↻ Yangilash</button>
+      <div class="topbar-time" id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <div class="stat-val blue" id="st-total">—</div>
+        <div class="stat-lbl">Jami qidiruvlar</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val green" id="st-unique">—</div>
+        <div class="stat-lbl">Noyob so'zlar</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val yellow" id="st-countries">—</div>
+        <div class="stat-lbl">Davlatlar</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val" id="st-today" style="color:var(--accent)">—</div>
+        <div class="stat-lbl">Bugun</div>
+      </div>
+    </div>
+
+    <!-- PERIOD FILTER -->
+    <div class="period-tab-row">
+      <button class="period-tab active" onclick="setPeriod('today',   this)">Bugun</button>
+      <button class="period-tab"        onclick="setPeriod('week',    this)">Bu hafta</button>
+      <button class="period-tab"        onclick="setPeriod('month',   this)">Bu oy</button>
+      <button class="period-tab"        onclick="setPeriod('year',    this)">Bu yil</button>
+      <button class="period-tab"        onclick="setPeriod('all',     this)">Barchasi</button>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="charts-2col">
+      <!-- Qidiruv dinamikasi -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Qidiruv dinamikasi</div>
+            <div class="chart-sub" id="chart-sub-label">Bugungi qidiruvlar</div>
+          </div>
+        </div>
+        <canvas id="trendChart" height="120"></canvas>
+      </div>
+
+      <!-- Qurilma turlari -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Qurilma turlari</div>
+            <div class="chart-sub">Qidiruv qilgan qurilmalar</div>
+          </div>
+        </div>
+        <canvas id="deviceChart" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- TOP QIDIRUVLAR + DAVLATLAR -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
+
+      <!-- Eng ko'p qidirilgan so'zlar -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-title">🔥 Top qidirilgan so'zlar</div>
+          <span style="font-size:.75rem;color:var(--muted)" id="top-period-label">Bugun</span>
+        </div>
+        <div style="padding:16px" id="top-queries-list">
+          <div style="text-align:center;padding:20px;color:var(--muted)">
+            <span class="spinner"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Davlatlar bo'yicha -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-title">🌍 Davlatlar bo'yicha</div>
+          <span style="font-size:.75rem;color:var(--muted)">Bosilganda tafsilot</span>
+        </div>
+        <div style="padding:16px">
+          <div class="country-stat-grid" id="country-stats-grid">
+            <div style="text-align:center;padding:20px;color:var(--muted);grid-column:1/-1">
+              <span class="spinner"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BARCHASI JADVALI -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-title">📋 Barcha qidiruvlar</div>
+        <div style="display:flex;gap:8px">
+          <input class="inp" id="search-filter" placeholder="🔍 So'z qidirish..."
+                 oninput="filterTable()" style="max-width:200px"/>
+          <select class="inp" id="device-filter" onchange="filterTable()"
+                  style="max-width:140px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-family:var(--font-ui)">
+            <option value="">Barcha qurilmalar</option>
+            <option value="Phone">📱 Phone</option>
+            <option value="Tablet">📟 Tablet</option>
+            <option value="Smart TV">📺 Smart TV</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Qidiruv so'zi</th>
+              <th>Davlat</th>
+              <th>Qurilma</th>
+              <th>Natijalar</th>
+              <th>Vaqt</th>
+            </tr>
+          </thead>
+          <tbody id="all-logs-tbody">
+            <tr class="loading-row">
+              <td colspan="6"><span class="spinner"></span> Yuklanmoqda…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:10px 20px;font-size:.75rem;color:var(--muted)" id="table-count"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DAVLAT DETAIL MODAL -->
+<div class="modal-bg" id="country-modal">
+  <div class="modal country-detail-modal">
+    <div class="modal-title" id="cm-title">🌍 Davlat qidiruvlari</div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px">
+        Bu davlatdan eng ko'p qidirilgan so'zlar:
+      </div>
+      <div id="cm-queries"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="closeCountryModal()" style="margin-left:auto">
+        Yopish
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// Davlatlar ro'yxati (Google Translate tillari)
+// ─────────────────────────────────────────────
+
+const COUNTRIES_MAP = {
+  AF:'🇦🇫 Afgʻoniston', AL:'🇦🇱 Albaniya', DZ:'🇩🇿 Jazoir',
+  AD:'🇦🇩 Andorra', AO:'🇦🇴 Angola', AG:'🇦🇬 Antigua va Barbuda',
+  AR:'🇦🇷 Argentina', AM:'🇦🇲 Armaniston', AU:'🇦🇺 Avstraliya',
+  AT:'🇦🇹 Avstriya', AZ:'🇦🇿 Ozarbayjon', BS:'🇧🇸 Bagama orollari',
+  BH:'🇧🇭 Bahrayn', BD:'🇧🇩 Bangladesh', BB:'🇧🇧 Barbados',
+  BY:'🇧🇾 Belarus', BE:'🇧🇪 Belgiya', BZ:'🇧🇿 Beliz',
+  BJ:'🇧🇯 Benin', BT:'🇧🇹 Butan', BO:'🇧🇴 Boliviya',
+  BA:'🇧🇦 Bosniya', BW:'🇧🇼 Botsvana', BR:'🇧🇷 Braziliya',
+  BN:'🇧🇳 Bruney', BG:'🇧🇬 Bolgariya', BF:'🇧🇫 Burkina-Faso',
+  BI:'🇧🇮 Burundi', CV:'🇨🇻 Kabo-Verde', KH:'🇰🇭 Kambodja',
+  CM:'🇨🇲 Kamerun', CA:'🇨🇦 Kanada', CF:'🇨🇫 Markaziy Afrika',
+  TD:'🇹🇩 Chad', CL:'🇨🇱 Chili', CN:'🇨🇳 Xitoy',
+  CO:'🇨🇴 Kolumbiya', CR:'🇨🇷 Kosta-Rika', HR:'🇭🇷 Xorvatiya',
+  CU:'🇨🇺 Kuba', CY:'🇨🇾 Kipr', CZ:'🇨🇿 Chexiya',
+  DK:'🇩🇰 Daniya', DJ:'🇩🇯 Jibuti', DO:'🇩🇴 Dominikan',
+  EC:'🇪🇨 Ekvador', EG:'🇪🇬 Misr', SV:'🇸🇻 Salvador',
+  EE:'🇪🇪 Estoniya', ET:'🇪🇹 Efiopiya', FJ:'🇫🇯 Fiji',
+  FI:'🇫🇮 Finlandiya', FR:'🇫🇷 Fransiya', GA:'🇬🇦 Gabon',
+  GM:'🇬🇲 Gambiya', GE:'🇬🇪 Gruziya', DE:'🇩🇪 Germaniya',
+  GH:'🇬🇭 Gana', GR:'🇬🇷 Gretsiya', GT:'🇬🇹 Gvatemala',
+  GN:'🇬🇳 Gvineya', HT:'🇭🇹 Gaiti', HN:'🇭🇳 Gonduras',
+  HU:'🇭🇺 Vengriya', IS:'🇮🇸 Islandiya', IN:'🇮🇳 Hindiston',
+  ID:'🇮🇩 Indoneziya', IR:'🇮🇷 Eron', IQ:'🇮🇶 Iroq',
+  IE:'🇮🇪 Irlandiya', IL:'🇮🇱 Isroil', IT:'🇮🇹 Italiya',
+  JM:'🇯🇲 Yamayka', JP:'🇯🇵 Yaponiya', JO:'🇯🇴 Iordaniya',
+  KZ:'🇰🇿 Qozogʻiston', KE:'🇰🇪 Keniya', KR:'🇰🇷 Koreya',
+  KW:'🇰🇼 Quvayt', KG:'🇰🇬 Qirgʻiziston', LA:'🇱🇦 Laos',
+  LV:'🇱🇻 Latviya', LB:'🇱🇧 Livan', LY:'🇱🇾 Liviya',
+  LT:'🇱🇹 Litva', LU:'🇱🇺 Lyuksemburg', MY:'🇲🇾 Malayziya',
+  MV:'🇲🇻 Maldiv', ML:'🇲🇱 Mali', MT:'🇲🇹 Malta',
+  MX:'🇲🇽 Meksika', MD:'🇲🇩 Moldova', MC:'🇲🇨 Monako',
+  MN:'🇲🇳 Moʻgʻuliston', MA:'🇲🇦 Marokash', MZ:'🇲🇿 Mozambik',
+  MM:'🇲🇲 Myanma', NA:'🇳🇦 Namibiya', NP:'🇳🇵 Nepal',
+  NL:'🇳🇱 Niderlandiya', NZ:'🇳🇿 Yangi Zelandiya',
+  NI:'🇳🇮 Nikaragua', NE:'🇳🇪 Niger', NG:'🇳🇬 Nigeriya',
+  NO:'🇳🇴 Norvegiya', OM:'🇴🇲 Ummon', PK:'🇵🇰 Pokiston',
+  PS:'🇵🇸 Falastin', PA:'🇵🇦 Panama', PY:'🇵🇾 Paragvay',
+  PE:'🇵🇪 Peru', PH:'🇵🇭 Filippin', PL:'🇵🇱 Polsha',
+  PT:'🇵🇹 Portugaliya', QA:'🇶🇦 Qatar', RO:'🇷🇴 Ruminiya',
+  RU:'🇷🇺 Rossiya', RW:'🇷🇼 Ruanda', SA:'🇸🇦 Saudiya Arabistoni',
+  SN:'🇸🇳 Senegal', RS:'🇷🇸 Serbiya', SG:'🇸🇬 Singapur',
+  SK:'🇸🇰 Slovakiya', SI:'🇸🇮 Sloveniya', SO:'🇸🇴 Somali',
+  ZA:'🇿🇦 Janubiy Afrika', ES:'🇪🇸 Ispaniya', LK:'🇱🇰 Shri-Lanka',
+  SD:'🇸🇩 Sudan', SE:'🇸🇪 Shvetsiya', CH:'🇨🇭 Shveytsariya',
+  SY:'🇸🇾 Suriya', TW:'🇹🇼 Tayvan', TJ:'🇹🇯 Tojikiston',
+  TZ:'🇹🇿 Tanzaniya', TH:'🇹🇭 Tailand', TG:'🇹🇬 Togo',
+  TN:'🇹🇳 Tunis', TR:'🇹🇷 Turkiya', TM:'🇹🇲 Turkmaniston',
+  UG:'🇺🇬 Uganda', UA:'🇺🇦 Ukraina', AE:'🇦🇪 BAA',
+  GB:'🇬🇧 Buyuk Britaniya', US:'🇺🇸 AQSh',
+  UY:'🇺🇾 Urugvay', UZ:'🇺🇿 Oʻzbekiston',
+  VE:'🇻🇪 Venesuela', VN:'🇻🇳 Vyetnam',
+  YE:'🇾🇪 Yaman', ZM:'🇿🇲 Zambiya', ZW:'🇿🇼 Zimbabwe',
+  // Qo'shimcha
+  AZ:'🇦🇿 Ozarbayjon', GE:'🇬🇪 Gruziya', KZ:'🇰🇿 Qozogʻiston',
+  TJ:'🇹🇯 Tojikiston', TM:'🇹🇲 Turkmaniston', UZ:'🇺🇿 Oʻzbekiston',
+  KG:'🇰🇬 Qirgʻiziston', BY:'🇧🇾 Belarus', MD:'🇲🇩 Moldova',
+};
+
+function getCountryLabel(code) {
+  return COUNTRIES_MAP[code?.toUpperCase()] || (code ? `🌍 ${code}` : '🌍 Nomaʼlum');
+}
+
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+
+let allLogs      = [];
+let filteredLogs = [];
+let currentPeriod = 'today';
+let trendChart   = null;
+let deviceChart  = null;
+
+Chart.defaults.color       = '#5a5f78';
+Chart.defaults.borderColor = '#1d1f2b';
+
+// ─────────────────────────────────────────────
+// Period — sana filtri
+// ─────────────────────────────────────────────
+
+function setPeriod(period, btn) {
+  currentPeriod = period;
+  document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const labels = {
+    today:'Bugun', week:'Bu hafta', month:'Bu oy', year:'Bu yil', all:'Barchasi'
+  };
+  document.getElementById('top-period-label').textContent = labels[period];
+  document.getElementById('chart-sub-label').textContent =
+    labels[period] + ' qidiruvlar';
+  applyPeriodFilter();
+}
+
+function getFromDate(period) {
+  const d = new Date();
+  switch(period) {
+    case 'today': d.setHours(0,0,0,0); return d;
+    case 'week':  d.setDate(d.getDate()-7); return d;
+    case 'month': d.setMonth(d.getMonth()-1); return d;
+    case 'year':  d.setFullYear(d.getFullYear()-1); return d;
+    default:      return null;
+  }
+}
+
+function applyPeriodFilter() {
+  const from = getFromDate(currentPeriod);
+  filteredLogs = from
+    ? allLogs.filter(l => new Date(l.created_at) >= from)
+    : [...allLogs];
+  renderTopQueries();
+  renderCountryStats();
+  renderTrendChart();
+  renderDeviceChart();
+  renderTable();
+}
+
+// ─────────────────────────────────────────────
+// Ma'lumotlarni yuklash
+// ─────────────────────────────────────────────
+
+async function loadStats() {
+  try {
+    allLogs = await sbFetch(
+      'search_logs?select=*&order=created_at.desc&limit=5000'
+    ) || [];
+
+    updateMainStats();
+    applyPeriodFilter();
+  } catch(e) {
+    document.getElementById('top-queries-list').innerHTML =
+      `<div style="color:var(--red)">Xatolik: ${e.message}</div>`;
+  }
+}
+
+function updateMainStats() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayLogs = allLogs.filter(l => new Date(l.created_at) >= today);
+  const uniqueQueries = new Set(allLogs.map(l => l.query.toLowerCase()));
+  const countries = new Set(allLogs.map(l => l.country).filter(Boolean));
+
+  document.getElementById('st-total').textContent     = allLogs.length.toLocaleString();
+  document.getElementById('st-unique').textContent    = uniqueQueries.size.toLocaleString();
+  document.getElementById('st-countries').textContent = countries.size;
+  document.getElementById('st-today').textContent     = todayLogs.length;
+}
+
+// ─────────────────────────────────────────────
+// TOP qidiruvlar
+// ─────────────────────────────────────────────
+
+function renderTopQueries() {
+  const freq = {};
+  filteredLogs.forEach(l => {
+    const q = l.query.toLowerCase().trim();
+    if (q) freq[q] = (freq[q] || 0) + 1;
+  });
+
+  const sorted = Object.entries(freq)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0, 20);
+
+  const maxCount = sorted[0]?.[1] || 1;
+  const container = document.getElementById('top-queries-list');
+
+  if (!sorted.length) {
+    container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">Ma\'lumot yo\'q</div>';
+    return;
+  }
+
+  container.innerHTML = sorted.map(([query, count], i) => {
+    const pct = (count / maxCount * 100).toFixed(0);
+    const rankClass = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;
+                  border-bottom:1px solid rgba(29,31,43,.6)">
+        <div class="rank-num ${rankClass}">${i+1}</div>
+        <div style="flex:1;font-size:.85rem;font-weight:500">${esc(query)}</div>
+        <div class="query-bar-wrap">
+          <div class="query-bar-fill" style="width:${pct}%"></div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:.78rem;
+                    color:var(--accent);min-width:32px;text-align:right">
+          ${count}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// Davlatlar bo'yicha statistika
+// ─────────────────────────────────────────────
+
+function renderCountryStats() {
+  const freq = {};
+  filteredLogs.forEach(l => {
+    const c = l.country?.toUpperCase() || 'XX';
+    if (!freq[c]) freq[c] = { count:0, queries:{} };
+    freq[c].count++;
+    const q = l.query.toLowerCase().trim();
+    if (q) freq[c].queries[q] = (freq[c].queries[q] || 0) + 1;
+  });
+
+  const sorted = Object.entries(freq).sort((a,b) => b[1].count - a[1].count).slice(0,24);
+  const grid   = document.getElementById('country-stats-grid');
+
+  if (!sorted.length) {
+    grid.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;grid-column:1/-1">Ma\'lumot yo\'q</div>';
+    return;
+  }
+
+  grid.innerHTML = sorted.map(([code, data]) => {
+    const label = getCountryLabel(code);
+    const parts  = label.split(' ');
+    const flag   = parts[0];
+    const name   = parts.slice(1).join(' ');
+    return `
+      <div class="country-stat-card"
+           onclick='openCountryModal("${code}", ${JSON.stringify(JSON.stringify(data.queries))})'>
+        <div class="country-flag-big">${flag}</div>
+        <div class="country-stat-name">${esc(name || code)}</div>
+        <div class="country-stat-count">${data.count} ta qidiruv</div>
+      </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// Trend chart
+// ─────────────────────────────────────────────
+
+function renderTrendChart() {
+  const ctx = document.getElementById('trendChart');
+  if (!ctx) return;
+
+  // Soat bo'yicha (bugun) yoki kun bo'yicha (qolganlar)
+  const isToday  = currentPeriod === 'today';
+  const isWeek   = currentPeriod === 'week';
+  const isMonth  = currentPeriod === 'month';
+
+  const buckets  = {};
+  filteredLogs.forEach(l => {
+    const d = new Date(l.created_at);
+    let key;
+    if (isToday)     key = d.getHours() + ':00';
+    else if (isWeek) key = `${d.getDate()}/${d.getMonth()+1}`;
+    else if (isMonth)key = `${d.getDate()}/${d.getMonth()+1}`;
+    else             key = `${d.getMonth()+1}/${d.getFullYear()}`;
+    buckets[key] = (buckets[key] || 0) + 1;
+  });
+
+  const labels = Object.keys(buckets);
+  const values = Object.values(buckets);
+
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label          : 'Qidiruvlar',
+        data           : values,
+        borderColor    : '#6c7bff',
+        backgroundColor: 'rgba(108,123,255,.08)',
+        borderWidth    : 2,
+        pointRadius    : 3,
+        fill           : true,
+        tension        : 0.4,
+      }]
+    },
+    options: {
+      plugins: { legend:{ display:false } },
+      scales: {
+        x: { grid:{ display:false }, ticks:{ maxTicksLimit:8 } },
+        y: { grid:{ color:'#1d1f2b' }, ticks:{ precision:0 } },
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// Device chart
+// ─────────────────────────────────────────────
+
+function renderDeviceChart() {
+  const ctx = document.getElementById('deviceChart');
+  if (!ctx) return;
+
+  const freq = {};
+  filteredLogs.forEach(l => {
+    const d = l.device_type || 'Unknown';
+    freq[d] = (freq[d] || 0) + 1;
+  });
+
+  const labels = Object.keys(freq);
+  const values = Object.values(freq);
+
+  if (deviceChart) deviceChart.destroy();
+  deviceChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data           : values,
+        backgroundColor: ['#6c7bff','#3ddc97','#ffc15e','#ff5f6d'],
+        borderWidth    : 0,
+        hoverOffset    : 6,
+      }]
+    },
+    options: {
+      cutout : '65%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels  : { padding:12, boxWidth:10, usePointStyle:true }
+        }
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// Barcha loglar jadvali
+// ─────────────────────────────────────────────
+
+function renderTable() {
+  const tbody = document.getElementById('all-logs-tbody');
+  document.getElementById('table-count').textContent =
+    `${filteredLogs.length} ta qidiruv ko'rsatilmoqda`;
+
+  if (!filteredLogs.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Ma\'lumot yo\'q</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredLogs.slice(0, 200).map((l, i) => `
+    <tr>
+      <td style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted)">${i+1}</td>
+      <td style="font-weight:600">${esc(l.query)}</td>
+      <td style="font-size:.82rem">${getCountryLabel(l.country)}</td>
+      <td>
+        <span class="badge ${
+          l.device_type==='Smart TV' ? 'badge-popular' :
+          l.device_type==='Tablet'   ? 'badge-discount' :
+          'badge-inactive'}">
+          ${l.device_type==='Smart TV' ? '📺' : l.device_type==='Tablet' ? '📟' : '📱'}
+          ${esc(l.device_type || '—')}
+        </span>
+      </td>
+      <td style="font-family:var(--font-mono);font-size:.78rem">
+        ${l.results_count ?? '—'}
+      </td>
+      <td style="font-size:.72rem;color:var(--muted);font-family:var(--font-mono)">
+        ${formatDate(l.created_at)}
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  const s = document.getElementById('search-filter').value.toLowerCase();
+  const d = document.getElementById('device-filter').value;
+  const from = getFromDate(currentPeriod);
+
+  filteredLogs = allLogs.filter(l => {
+    const matchPeriod = !from || new Date(l.created_at) >= from;
+    const matchSearch = !s || l.query.toLowerCase().includes(s);
+    const matchDevice = !d || l.device_type === d;
+    return matchPeriod && matchSearch && matchDevice;
+  });
+  renderTable();
+}
+
+// ─────────────────────────────────────────────
+// Davlat modal
+// ─────────────────────────────────────────────
+
+function openCountryModal(code, queriesJsonStr) {
+  const queries = JSON.parse(queriesJsonStr);
+  const label   = getCountryLabel(code);
+  document.getElementById('cm-title').textContent = label + ' — qidiruvlar';
+
+  const sorted = Object.entries(queries)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0, 50);
+
+  document.getElementById('cm-queries').innerHTML = sorted.map(([q, count]) =>
+    `<span class="query-chip">
+      ${esc(q)}
+      <span class="query-chip-count">${count}</span>
+    </span>`
+  ).join('');
+
+  document.getElementById('country-modal').classList.add('show');
+}
+
+function closeCountryModal() {
+  document.getElementById('country-modal').classList.remove('show');
+}
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleString('uz-UZ', {
+    day:'2-digit', month:'2-digit', year:'2-digit',
+    hour:'2-digit', minute:'2-digit',
+  });
+}
+
+document.getElementById('country-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeCountryModal();
+});
+
+// Init
+document.addEventListener('DOMContentLoaded', loadStats);
+</script>
+</body>
+</html>
