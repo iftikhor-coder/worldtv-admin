@@ -31,8 +31,8 @@ const SIDEBAR_LINKS = [
   {
     section: 'Tizim',
     items: [
-      { icon: '🔔', label: 'Bildirishnomalar', href: '#',               badge: '3'  },
-      { icon: '💬', label: 'Feedbacklar',      href: 'feedbacks.html', badge: ''   },
+      { icon: '🔔', label: 'Bildirishnomalar', href: 'notifications.html', badge: '' }, // QO'SHILDI
+      { icon: '💬', label: 'Feedbacklar',      href: 'feedbacks.html',    badge: '' },
       { icon: '⚙️', label: 'Sozlamalar',       href: '#'                           },
       { icon: '📝', label: 'Loglar',           href: '#'                           },
     ],
@@ -163,17 +163,46 @@ function clearMsg(elId) {
   if (el) el.innerHTML = '';
 }
 
+// ─────────────────────────────────────────────
+// FEEDBACK BADGE
+// ─────────────────────────────────────────────
+
 async function loadFeedbackBadge() {
   try {
-    const data = await sbFetch('feedbacks?select=id&is_read=eq.false');
+    const data  = await sbFetch('feedbacks?select=id&is_read=eq.false');
     const count = data?.length || 0;
     const badge = document.getElementById('badgeFeedbacklar');
     if (badge) {
-      badge.textContent = count > 0 ? count : '';
+      badge.textContent   = count > 0 ? count : '';
       badge.style.display = count > 0 ? 'inline-block' : 'none';
     }
-  } catch(e) { /* jimgina o'tkazib yuboriladi */ }
+  } catch(e) { /* jimgina */ }
 }
+
+// ─────────────────────────────────────────────
+// BILDIRISHNOMA BADGE — bugun yangi foydalanuvchilar
+// QO'SHILDI
+// ─────────────────────────────────────────────
+
+async function loadNotifBadge() {
+  try {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const iso   = today.toISOString();
+    const data  = await sbFetch(
+      `user_profiles?select=user_uid&first_seen_at=gte.${iso}`
+    );
+    const count = data?.length || 0;
+    const badge = document.getElementById('badgeBildirishnomalar');
+    if (badge) {
+      badge.textContent   = count > 0 ? count : '';
+      badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+  } catch(e) { /* jimgina */ }
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
   const isLoginPage = window.location.pathname.includes('login');
@@ -185,5 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebarToggle();
   initClock();
 
-  if (!isLoginPage) loadFeedbackBadge();
+  if (!isLoginPage) {
+    loadFeedbackBadge();
+    loadNotifBadge();  // QO'SHILDI
+  }
 });
