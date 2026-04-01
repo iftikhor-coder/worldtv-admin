@@ -3,21 +3,12 @@
    Barcha sahifalar shu faylni import qiladi
 ═══════════════════════════════════════════════ */
 
-// ─────────────────────────────────────────────
-// CONFIG — faqat shu yerda o'zgartiring
-// ─────────────────────────────────────────────
-
 const ADMIN_CONFIG = {
   SUPABASE_URL  : 'https://wmymjjbmbkdubgzvcvyg.supabase.co',
   SERVICE_KEY   : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndteW1qamJtYmtkdWJnenZjdnlnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDM3NTEyMywiZXhwIjoyMDg5OTUxMTIzfQ.epo_yzHjeNrlDiv5tWD7p1rU7fKjmQI03hmBrgwzsaw',
   ADMIN_PASSWORD: 'worldtv_admin_2025',
   SESSION_KEY   : 'worldtv_admin_session',
 };
-
-// ─────────────────────────────────────────────
-// SIDEBAR — barcha sahifalar uchun bir xil
-// Yangi sahifa qo'shilsa — faqat shu yerda
-// ─────────────────────────────────────────────
 
 const SIDEBAR_LINKS = [
   {
@@ -27,6 +18,7 @@ const SIDEBAR_LINKS = [
       { icon: '👥', label: 'Foydalanuvchilar', href: 'users.html',    badge: '' },
       { icon: '📺', label: 'Kanallar',         href: 'channels.html'           },
       { icon: '📈', label: 'Analytics',        href: '#'                        },
+      { icon: '🔍', label: 'Qidiruv stat',     href: 'search-stats.html'        },
     ],
   },
   {
@@ -86,10 +78,6 @@ function buildSidebar() {
     </div>`;
 }
 
-// ─────────────────────────────────────────────
-// AUTH
-// ─────────────────────────────────────────────
-
 function isAuthenticated() {
   return sessionStorage.getItem(ADMIN_CONFIG.SESSION_KEY) === 'authenticated';
 }
@@ -111,10 +99,6 @@ function adminLogout() {
   sessionStorage.removeItem(ADMIN_CONFIG.SESSION_KEY);
   window.location.href = 'login.html';
 }
-
-// ─────────────────────────────────────────────
-// SUPABASE API
-// ─────────────────────────────────────────────
 
 const SB_HEADERS = {
   get value() {
@@ -141,10 +125,6 @@ async function sbFetch(endpoint, opts = {}) {
   return tx ? JSON.parse(tx) : null;
 }
 
-// ─────────────────────────────────────────────
-// CLOCK
-// ─────────────────────────────────────────────
-
 function initClock() {
   const el = document.getElementById('clock');
   if (!el) return;
@@ -152,10 +132,6 @@ function initClock() {
   update();
   setInterval(update, 1000);
 }
-
-// ─────────────────────────────────────────────
-// SIDEBAR mobile toggle
-// ─────────────────────────────────────────────
 
 function initSidebarToggle() {
   const toggle  = document.getElementById('menu-toggle');
@@ -170,10 +146,6 @@ function initSidebarToggle() {
     }
   });
 }
-
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
 
 function esc(s) {
   return String(s || '')
@@ -191,10 +163,6 @@ function clearMsg(elId) {
   if (el) el.innerHTML = '';
 }
 
-// ─────────────────────────────────────────────
-// FEEDBACK BADGE — yangi xabarlar sonini ko'rsatish
-// ─────────────────────────────────────────────
-
 async function loadFeedbackBadge() {
   try {
     const data = await sbFetch('feedbacks?select=id&is_read=eq.false');
@@ -207,21 +175,15 @@ async function loadFeedbackBadge() {
   } catch(e) { /* jimgina o'tkazib yuboriladi */ }
 }
 
-// ─────────────────────────────────────────────
-// INIT — sahifa yuklanganda
-// ─────────────────────────────────────────────
-
 document.addEventListener('DOMContentLoaded', () => {
   const isLoginPage = window.location.pathname.includes('login');
   if (!isLoginPage) requireAuth();
 
-  // Sidebar'ni render qilish
   const sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.innerHTML = buildSidebar();
 
   initSidebarToggle();
   initClock();
 
-  // Feedback badge'ni yuklash (login sahifasidan tashqari)
   if (!isLoginPage) loadFeedbackBadge();
 });
