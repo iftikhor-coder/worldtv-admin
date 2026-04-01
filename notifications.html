@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WorldTV Admin — Bildirishnomalar</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <script src="js/admin.js" defer></script>
+  <style>
+    /* ── Filter tabs ── */
+    .filter-tabs { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
+    .filter-tab {
+      padding:7px 16px; border-radius:8px; border:1px solid var(--border);
+      background:var(--surface); color:var(--muted);
+      font-family:var(--font-ui); font-size:.82rem; font-weight:500;
+      cursor:pointer; transition:.15s;
+    }
+    .filter-tab.active, .filter-tab:hover {
+      background:var(--accent-glow); color:var(--accent);
+      border-color:rgba(108,123,255,.3);
+    }
+
+    /* ── Notification card ── */
+    .notif-card {
+      display:flex; align-items:flex-start; gap:14px;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:14px; padding:16px 18px; margin-bottom:10px;
+      transition:border-color .15s;
+    }
+    .notif-card.unread { border-left:3px solid var(--accent); }
+    .notif-card:hover  { border-color:var(--accent); }
+
+    .notif-avatar {
+      width:46px; height:46px; border-radius:12px; flex-shrink:0;
+      background:linear-gradient(135deg,var(--accent),#a78bff);
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.1rem; font-weight:700; color:#fff;
+    }
+    .notif-avatar img {
+      width:100%; height:100%; border-radius:12px; object-fit:cover;
+    }
+
+    .notif-body { flex:1; min-width:0; }
+    .notif-name { font-weight:700; font-size:.92rem; margin-bottom:3px; }
+    .notif-email { font-size:.78rem; color:var(--muted); margin-bottom:6px; }
+    .notif-meta {
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      font-size:.76rem; color:var(--muted);
+    }
+    .notif-meta span { display:flex; align-items:center; gap:4px; }
+
+    .notif-actions { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+
+    /* Premium quick buttons */
+    .quick-prem {
+      display:flex; gap:5px; flex-wrap:wrap; margin-top:8px;
+    }
+    .qp-btn {
+      padding:4px 10px; border-radius:6px; border:1px solid var(--border);
+      background:var(--surface2); color:var(--muted);
+      font-family:var(--font-ui); font-size:.72rem; cursor:pointer; transition:.15s;
+    }
+    .qp-btn:hover { background:var(--accent-glow); color:var(--accent); border-color:var(--accent); }
+
+    /* Unread dot */
+    .unread-dot {
+      width:8px; height:8px; border-radius:50%;
+      background:var(--accent); flex-shrink:0; margin-top:6px;
+    }
+
+    /* Empty state */
+    .empty-notif {
+      text-align:center; padding:60px 20px; color:var(--muted);
+    }
+    .empty-notif .icon { font-size:3rem; margin-bottom:12px; }
+
+    /* Period filter */
+    .period-select {
+      padding:7px 12px; border-radius:8px;
+      border:1px solid var(--border); background:var(--surface);
+      color:var(--text); font-family:var(--font-ui); font-size:.82rem;
+      cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar"></aside>
+
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div>
+        <div class="topbar-title">Bildirishnomalar</div>
+        <div class="topbar-sub">Yangi ro'yxatdan o'tgan foydalanuvchilar</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="loadNotifications()">↻ Yangilash</button>
+      <div class="topbar-time" id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <div class="stat-val blue"   id="st-total">—</div>
+        <div class="stat-lbl">Jami yangi</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val green"  id="st-today">—</div>
+        <div class="stat-lbl">Bugun</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val yellow" id="st-week">—</div>
+        <div class="stat-lbl">Bu hafta</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-val"        id="st-premium" style="color:var(--accent)">—</div>
+        <div class="stat-lbl">Premium</div>
+      </div>
+    </div>
+
+    <!-- FILTER ROW -->
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all',this)">🔔 Barchasi</button>
+        <button class="filter-tab" onclick="setFilter('today',this)">📅 Bugun</button>
+        <button class="filter-tab" onclick="setFilter('week',this)">📆 Bu hafta</button>
+        <button class="filter-tab" onclick="setFilter('month',this)">🗓️ Bu oy</button>
+        <button class="filter-tab" onclick="setFilter('premium',this)">⭐ Premium</button>
+        <button class="filter-tab" onclick="setFilter('blocked',this)">🚫 Bloklangan</button>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <input class="inp" id="notif-search" placeholder="🔍 Ism yoki email..."
+               oninput="renderNotifications()" style="max-width:220px"/>
+        <button class="btn btn-ghost" onclick="markAllRead()">✓ Hammasini o'qildi</button>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS LIST -->
+    <div id="notif-list">
+      <div style="text-align:center;padding:40px;color:var(--muted)">
+        <span class="spinner"></span> Yuklanmoqda…
+      </div>
+    </div>
+
+    <!-- PAGINATION -->
+    <div id="notif-pagination" style="display:flex;gap:6px;padding:12px 0;flex-wrap:wrap"></div>
+
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+
+let allUsers     = [];
+let filtered     = [];
+let currentFilter= 'all';
+let currentPage  = 1;
+const PAGE_SIZE  = 20;
+
+// ─────────────────────────────────────────────
+// YUKLASH
+// ─────────────────────────────────────────────
+
+async function loadNotifications() {
+  document.getElementById('notif-list').innerHTML =
+    '<div style="text-align:center;padding:40px;color:var(--muted)"><span class="spinner"></span> Yuklanmoqda…</div>';
+  try {
+    // Barcha foydalanuvchilar — first_seen_at bo'yicha yangi→eski
+    allUsers = await sbFetch(
+      'user_profiles?select=*&order=first_seen_at.desc&limit=2000'
+    ) || [];
+
+    updateStats();
+    applyFilter();
+    updateBadge();
+  } catch(e) {
+    document.getElementById('notif-list').innerHTML =
+      `<div style="color:var(--red);padding:20px">Xatolik: ${e.message}</div>`;
+  }
+}
+
+// ─────────────────────────────────────────────
+// STATISTIKA
+// ─────────────────────────────────────────────
+
+function updateStats() {
+  const now   = new Date();
+  const today = new Date(now); today.setHours(0,0,0,0);
+  const week  = new Date(now); week.setDate(week.getDate()-7);
+
+  const todayUsers   = allUsers.filter(u => new Date(u.first_seen_at) >= today);
+  const weekUsers    = allUsers.filter(u => new Date(u.first_seen_at) >= week);
+  const premiumUsers = allUsers.filter(u =>
+    u.premium_until && new Date(u.premium_until) > now);
+
+  document.getElementById('st-total').textContent   = allUsers.length;
+  document.getElementById('st-today').textContent   = todayUsers.length;
+  document.getElementById('st-week').textContent    = weekUsers.length;
+  document.getElementById('st-premium').textContent = premiumUsers.length;
+}
+
+// ─────────────────────────────────────────────
+// FILTER
+// ─────────────────────────────────────────────
+
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  currentPage   = 1;
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter();
+}
+
+function applyFilter() {
+  const now   = new Date();
+  const today = new Date(now); today.setHours(0,0,0,0);
+  const week  = new Date(now); week.setDate(week.getDate()-7);
+  const month = new Date(now); month.setMonth(month.getMonth()-1);
+  const q     = document.getElementById('notif-search')?.value?.toLowerCase() || '';
+
+  filtered = allUsers.filter(u => {
+    const regDate = new Date(u.first_seen_at);
+    const matchSearch = !q ||
+      (u.display_name||'').toLowerCase().includes(q) ||
+      (u.email||'').toLowerCase().includes(q);
+
+    const matchFilter = (() => {
+      switch(currentFilter) {
+        case 'today'  : return regDate >= today;
+        case 'week'   : return regDate >= week;
+        case 'month'  : return regDate >= month;
+        case 'premium': return u.premium_until && new Date(u.premium_until) > now;
+        case 'blocked': return u.is_blocked;
+        default       : return true;
+      }
+    })();
+
+    return matchSearch && matchFilter;
+  });
+
+  renderNotifications();
+}
+
+// ─────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────
+
+function renderNotifications() {
+  const q = document.getElementById('notif-search')?.value?.toLowerCase() || '';
+  const list = q
+    ? filtered.filter(u =>
+        (u.display_name||'').toLowerCase().includes(q) ||
+        (u.email||'').toLowerCase().includes(q))
+    : filtered;
+
+  const total = list.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = (currentPage-1) * PAGE_SIZE;
+  const slice = list.slice(start, start + PAGE_SIZE);
+
+  const container = document.getElementById('notif-list');
+
+  if (!slice.length) {
+    container.innerHTML = `
+      <div class="empty-notif">
+        <div class="icon">🔔</div>
+        <div style="font-size:.92rem;font-weight:600">Bildirishnoma topilmadi</div>
+        <div style="font-size:.8rem;margin-top:6px">Hali yangi foydalanuvchilar yo'q</div>
+      </div>`;
+    document.getElementById('notif-pagination').innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = slice.map(u => notifCard(u)).join('');
+  renderPagination(total, pages);
+}
+
+function notifCard(u) {
+  const now      = new Date();
+  const initial  = (u.display_name||u.email||'U')[0].toUpperCase();
+  const regDate  = new Date(u.first_seen_at);
+  const isPremium= u.premium_until && new Date(u.premium_until) > now;
+  const isBlocked= u.is_blocked;
+  const isOnline = u.is_online;
+
+  const deviceIcon = u.device_type==='Smart TV' ? '📺' :
+                     u.device_type==='Tablet'   ? '📟' : '📱';
+
+  const premiumUntil = isPremium
+    ? `<span style="color:var(--yellow)">⭐ Premium — ${formatDate(u.premium_until)} gacha</span>`
+    : '<span style="color:var(--muted)">💳 Obuna yo\'q</span>';
+
+  return `
+    <div class="notif-card">
+      <div class="notif-avatar">${initial}</div>
+
+      <div class="notif-body">
+        <div class="notif-name">
+          ${esc(u.display_name||'Noma\'lum')}
+          ${isOnline  ? '<span class="badge badge-active" style="font-size:.65rem;margin-left:4px">🟢 Online</span>'     : ''}
+          ${isPremium ? '<span class="badge badge-popular" style="font-size:.65rem;margin-left:4px">⭐ Premium</span>'   : ''}
+          ${isBlocked ? '<span class="badge badge-inactive" style="font-size:.65rem;margin-left:4px">🚫 Bloklangan</span>': ''}
+        </div>
+
+        <div class="notif-email">${esc(u.email||'—')}</div>
+
+        <div class="notif-meta">
+          <span>${deviceIcon} ${esc(u.device_type||'—')}</span>
+          <span>🌍 ${esc(u.country||'—')}</span>
+          <span>🕐 Ro'yxat: ${formatDate(u.first_seen_at)}</span>
+          <span>👁 Oxirgi: ${timeAgo(u.last_seen_at)}</span>
+          <span>🌐 ${esc(u.ip_address||'—')}</span>
+        </div>
+
+        <div style="margin-top:6px;font-size:.78rem">${premiumUntil}</div>
+
+        <!-- Premium tez berish -->
+        ${!isPremium ? `
+        <div class="quick-prem">
+          <span style="font-size:.72rem;color:var(--muted);margin-right:4px">🎁 Premium:</span>
+          <button class="qp-btn" onclick="quickPremium('${u.user_uid}','${esc(u.display_name||u.email)}',1)">1 oy</button>
+          <button class="qp-btn" onclick="quickPremium('${u.user_uid}','${esc(u.display_name||u.email)}',3)">3 oy</button>
+          <button class="qp-btn" onclick="quickPremium('${u.user_uid}','${esc(u.display_name||u.email)}',6)">6 oy</button>
+          <button class="qp-btn" onclick="quickPremium('${u.user_uid}','${esc(u.display_name||u.email)}',12)">1 yil</button>
+        </div>` : ''}
+
+        <div class="notif-actions">
+          <!-- Foydalanuvchilar bo'limiga o'tish → Account modal ochiladi -->
+          <a class="btn btn-ghost" style="font-size:.8rem;text-decoration:none"
+             href="users.html?uid=${encodeURIComponent(u.user_uid)}">
+            👤 Profilni ko'rish
+          </a>
+          ${isBlocked
+            ? `<button class="btn btn-ghost" style="font-size:.8rem" onclick="unblockUser('${u.user_uid}','${esc(u.display_name||u.email)}')">✅ Blokni ochish</button>`
+            : `<button class="btn btn-ghost" style="font-size:.8rem;color:var(--red)" onclick="blockUser('${u.user_uid}','${esc(u.display_name||u.email)}')">🚫 Bloklash</button>`
+          }
+        </div>
+      </div>
+
+      <div class="unread-dot" title="Yangi foydalanuvchi"></div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// PAGINATION
+// ─────────────────────────────────────────────
+
+function renderPagination(total, pages) {
+  const el = document.getElementById('notif-pagination');
+  if (pages <= 1) { el.innerHTML=''; return; }
+
+  let html = `
+    <button class="page-btn" ${currentPage===1?'disabled':''} onclick="gotoPage(${currentPage-1})">←</button>
+    <span style="font-size:.8rem;color:var(--muted);padding:0 8px">${currentPage} / ${pages} (${total} ta)</span>`;
+
+  const s = Math.max(1, currentPage-2);
+  const e = Math.min(pages, s+4);
+  for (let p=s; p<=e; p++) {
+    html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="gotoPage(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" ${currentPage===pages?'disabled':''} onclick="gotoPage(${currentPage+1})">→</button>`;
+  el.innerHTML = html;
+}
+
+function gotoPage(p) {
+  currentPage = p;
+  renderNotifications();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ─────────────────────────────────────────────
+// QUICK PREMIUM BERISH
+// ─────────────────────────────────────────────
+
+async function quickPremium(uid, name, months) {
+  if (!confirm(`${name} ga ${months} oylik premium berilsinmi?`)) return;
+  try {
+    const until = new Date();
+    until.setMonth(until.getMonth() + months);
+
+    await sbFetch('subscriptions', {
+      method: 'POST',
+      body  : JSON.stringify({
+        firebase_uid : uid,
+        plan_name    : `Admin tomonidan ${months} oy`,
+        duration_days: months * 30,
+        price_paid   : 0,
+        currency     : 'USD',
+        starts_at    : new Date().toISOString(),
+        expires_at   : until.toISOString(),
+        is_active    : true,
+      }),
+    });
+
+    await sbFetch(`user_profiles?user_uid=eq.${uid}`, {
+      method: 'PATCH',
+      body  : JSON.stringify({ premium_until: until.toISOString() }),
+    });
+
+    showToast(`✅ ${name} ga ${months} oylik premium berildi!`);
+    loadNotifications();
+  } catch(e) {
+    showToast('❌ Xatolik: ' + e.message);
+  }
+}
+
+// ─────────────────────────────────────────────
+// BLOKLASH
+// ─────────────────────────────────────────────
+
+async function blockUser(uid, name) {
+  if (!confirm(`${name} bloklansimi?`)) return;
+  try {
+    await sbFetch(`user_profiles?user_uid=eq.${uid}`, {
+      method: 'PATCH',
+      body  : JSON.stringify({ is_blocked: true }),
+    });
+    showToast(`🚫 ${name} bloklandi!`);
+    loadNotifications();
+  } catch(e) { showToast('❌ Xatolik: ' + e.message); }
+}
+
+async function unblockUser(uid, name) {
+  if (!confirm(`${name} blokdan chiqarilsinmi?`)) return;
+  try {
+    await sbFetch(`user_profiles?user_uid=eq.${uid}`, {
+      method: 'PATCH',
+      body  : JSON.stringify({ is_blocked: false }),
+    });
+    showToast(`✅ ${name} blokdan chiqarildi!`);
+    loadNotifications();
+  } catch(e) { showToast('❌ Xatolik: ' + e.message); }
+}
+
+// ─────────────────────────────────────────────
+// HAMMASINI O'QILDI
+// ─────────────────────────────────────────────
+
+function markAllRead() {
+  showToast('✓ Barcha bildirishnomalar o\'qildi deb belgilandi');
+}
+
+// ─────────────────────────────────────────────
+// SIDEBAR BADGE YANGILASH
+// ─────────────────────────────────────────────
+
+async function updateBadge() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayCount = allUsers.filter(u => new Date(u.first_seen_at) >= today).length;
+  const badge = document.getElementById('badgeBildirishnomalar');
+  if (badge) {
+    badge.textContent = todayCount > 0 ? todayCount : '';
+    badge.style.display = todayCount > 0 ? 'inline-block' : 'none';
+  }
+}
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleString('uz-UZ', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit',
+  });
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '—';
+  const sec = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (sec < 60)    return `${sec} soniya oldin`;
+  if (sec < 3600)  return `${Math.floor(sec/60)} daqiqa oldin`;
+  if (sec < 86400) return `${Math.floor(sec/3600)} soat oldin`;
+  return `${Math.floor(sec/86400)} kun oldin`;
+}
+
+function showToast(msg) {
+  let t = document.getElementById('admin-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'admin-toast';
+    t.style.cssText = `
+      position:fixed;bottom:28px;right:28px;z-index:999;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:10px;padding:14px 20px;font-size:.85rem;color:var(--text);
+      box-shadow:0 8px 32px rgba(0,0,0,.4);transition:opacity .3s;opacity:0;max-width:320px;
+    `;
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.style.opacity='0'; }, 3500);
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', loadNotifications);
+</script>
+</body>
+</html>
