@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WorldTV Admin — Foydalanuvchilar</title>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/admin.js" defer></script>
+  <style>
+    /* ── View toggle ── */
+    .view-toggle { display:flex; gap:6px; margin-bottom:20px; }
+    .view-btn {
+      padding:8px 18px; border-radius:8px; border:1px solid var(--border);
+      background:var(--surface); color:var(--muted);
+      font-family:var(--font-ui); font-size:.84rem; font-weight:500;
+      cursor:pointer; transition:.15s;
+    }
+    .view-btn.active {
+      background:var(--accent-glow); color:var(--accent);
+      border-color:rgba(108,123,255,.35);
+    }
+
+    /* ── Country list ── */
+    .country-list-wrap { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+    .country-row {
+      display:flex; align-items:center; gap:12px;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; padding:12px 16px; cursor:pointer; transition:.15s;
+    }
+    .country-row:hover { border-color:var(--accent); }
+    .country-flag-img { width:28px; height:20px; border-radius:3px; object-fit:cover; flex-shrink:0; }
+    .country-name { font-weight:600; font-size:.88rem; flex:1; }
+    .country-count {
+      background:var(--accent-glow); color:var(--accent);
+      border-radius:6px; padding:2px 8px;
+      font-family:var(--font-mono); font-size:.75rem; font-weight:700;
+    }
+
+    /* ── User table ── */
+    .user-avatar-sm {
+      width:36px; height:36px; border-radius:10px;
+      background:linear-gradient(135deg,var(--accent),#a78bff);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; color:#fff; font-size:.82rem; flex-shrink:0;
+    }
+    .user-name-cell { display:flex; align-items:center; gap:10px; }
+    .online-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .dot-online  { background:var(--green); }
+    .dot-offline { background:var(--muted); }
+
+    /* ── Pagination ── */
+    .pagination {
+      display:flex; align-items:center; gap:6px;
+      padding:16px 20px; flex-wrap:wrap;
+    }
+    .page-btn {
+      width:34px; height:34px; border-radius:8px;
+      border:1px solid var(--border); background:var(--surface);
+      color:var(--muted); font-family:var(--font-mono); font-size:.8rem;
+      cursor:pointer; transition:.15s; display:flex; align-items:center; justify-content:center;
+    }
+    .page-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .page-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .page-btn:disabled { opacity:.35; cursor:not-allowed; }
+    .page-nav { padding:0 14px; font-size:.84rem; }
+
+    /* ── Back header ── */
+    .back-header {
+      display:flex; align-items:center; gap:12px; margin-bottom:16px;
+    }
+    .back-btn {
+      display:flex; align-items:center; gap:6px;
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:8px; padding:7px 14px; cursor:pointer;
+      font-family:var(--font-ui); font-size:.84rem; color:var(--muted);
+      transition:.15s;
+    }
+    .back-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* ── Account Modal ── */
+    .account-modal { width:min(720px,96vw); max-height:90vh; overflow-y:auto; padding:0; }
+    .acc-header {
+      display:flex; align-items:center; gap:16px;
+      padding:20px 24px; border-bottom:1px solid var(--border);
+      position:sticky; top:0; background:var(--surface); z-index:2;
+    }
+    .acc-big-avatar {
+      width:64px; height:64px; border-radius:16px; flex-shrink:0;
+      background:linear-gradient(135deg,var(--accent),#a78bff);
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.6rem; font-weight:700; color:#fff;
+    }
+    .acc-name { font-size:1.1rem; font-weight:700; }
+    .acc-email { font-size:.82rem; color:var(--muted); margin-top:2px; }
+
+    /* Tabs */
+    .acc-tabs {
+      display:flex; gap:0; border-bottom:1px solid var(--border);
+      position:sticky; top:104px; background:var(--surface); z-index:1;
+    }
+    .acc-tab {
+      flex:1; padding:12px; text-align:center;
+      font-family:var(--font-ui); font-size:.84rem; font-weight:500;
+      color:var(--muted); cursor:pointer; border-bottom:2px solid transparent;
+      transition:.15s;
+    }
+    .acc-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    /* Info grid */
+    .info-g { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:20px 24px; }
+    .info-g.full { grid-template-columns:1fr; }
+    .info-box {
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:10px; padding:12px 14px;
+    }
+    .info-lbl { font-size:.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .info-val { font-size:.86rem; font-weight:600; margin-top:5px; line-height:1.4; }
+
+    /* Map */
+    #acc-map { height:320px; border-radius:0; }
+    .map-layer-toggle {
+      display:flex; gap:6px; padding:12px 24px;
+      background:var(--surface2); border-top:1px solid var(--border);
+    }
+    .layer-btn {
+      padding:5px 12px; border-radius:6px; border:1px solid var(--border);
+      background:var(--surface); color:var(--muted);
+      font-family:var(--font-ui); font-size:.76rem; cursor:pointer; transition:.15s;
+    }
+    .layer-btn.active { background:var(--accent-glow); color:var(--accent); border-color:rgba(108,123,255,.3); }
+
+    /* Premium grid */
+    .prem-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:16px 24px; }
+    .prem-btn {
+      padding:10px 6px; border-radius:10px; border:1px solid var(--border);
+      background:var(--surface2); color:var(--text);
+      font-family:var(--font-ui); font-size:.8rem; font-weight:600;
+      cursor:pointer; text-align:center; transition:.15s;
+    }
+    .prem-btn:hover { background:var(--accent-glow); border-color:var(--accent); color:var(--accent); }
+
+    /* Modal footer */
+    .acc-footer {
+      display:flex; gap:10px; padding:16px 24px;
+      border-top:1px solid var(--border);
+      position:sticky; bottom:0; background:var(--surface);
+    }
+
+    /* Tab panels */
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    @media(max-width:600px){
+      .info-g { grid-template-columns:1fr; }
+      .prem-grid { grid-template-columns:repeat(2,1fr); }
+      .country-list-wrap { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar"></aside>
+
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div>
+        <div class="topbar-title">Foydalanuvchilar</div>
+        <div class="topbar-sub" id="topbar-sub">Barcha foydalanuvchilar</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="refreshView()">↻ Yangilash</button>
+      <div class="topbar-time" id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat-pill"><div class="stat-val blue" id="st-total">—</div><div class="stat-lbl">Jami</div></div>
+      <div class="stat-pill"><div class="stat-val green" id="st-online">—</div><div class="stat-lbl">Online</div></div>
+      <div class="stat-pill"><div class="stat-val yellow" id="st-premium">—</div><div class="stat-lbl">Premium</div></div>
+      <div class="stat-pill"><div class="stat-val red" id="st-blocked">—</div><div class="stat-lbl">Bloklangan</div></div>
+      <div class="stat-pill"><div class="stat-val" id="st-countries" style="color:var(--accent)">—</div><div class="stat-lbl">Davlatlar</div></div>
+    </div>
+
+    <!-- VIEW TOGGLE -->
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-countries" onclick="switchView('countries')">
+        🌍 Davlatlar bo'yicha
+      </button>
+      <button class="view-btn" id="btn-all" onclick="switchView('all')">
+        👥 Barcha foydalanuvchilar
+      </button>
+    </div>
+
+    <!-- ══ DAVLATLAR PANE ══ -->
+    <div id="pane-countries">
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-title">🌍 Davlatlar ro'yxati</div>
+          <input class="inp" id="country-search" placeholder="🔍 Davlat qidirish..."
+                 oninput="filterCountries()" style="max-width:240px"/>
+        </div>
+        <div style="padding:16px">
+          <div class="country-list-wrap" id="country-list">
+            <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">
+              <span class="spinner"></span> Yuklanmoqda…
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DAVLAT FOYDALANUVCHILARI PANE ══ -->
+    <div id="pane-country-users" style="display:none">
+      <div class="back-header">
+        <button class="back-btn" onclick="backToCountries()">← Orqaga</button>
+        <div>
+          <div style="font-weight:700;font-size:1rem" id="cu-title">—</div>
+          <div style="font-size:.78rem;color:var(--muted)" id="cu-subtitle">—</div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-title" id="cu-header">Foydalanuvchilar</div>
+          <input class="inp" id="cu-search" placeholder="🔍 Ism yoki email..."
+                 oninput="filterCountryUsers()" style="max-width:240px"/>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Foydalanuvchi</th>
+                <th>Qurilma</th>
+                <th>Holat</th>
+                <th>Oxirgi faollik</th>
+                <th>Ro'yxatdan</th>
+                <th>Amallar</th>
+              </tr>
+            </thead>
+            <tbody id="cu-tbody">
+              <tr class="loading-row"><td colspan="6"><span class="spinner"></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="cu-pagination"></div>
+      </div>
+    </div>
+
+    <!-- ══ BARCHA FOYDALANUVCHILAR PANE ══ -->
+    <div id="pane-all" style="display:none">
+      <div class="section-card">
+        <div class="section-card-header">
+          <div class="section-title">👥 Barcha foydalanuvchilar</div>
+          <div style="display:flex;gap:8px">
+            <input class="inp" id="all-search" placeholder="🔍 Ism yoki email..."
+                   oninput="filterAllUsers()" style="max-width:220px"/>
+            <select class="inp" id="all-filter-device" onchange="filterAllUsers()"
+                    style="max-width:140px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-family:var(--font-ui)">
+              <option value="">Barcha qurilmalar</option>
+              <option value="Phone">📱 Phone</option>
+              <option value="Tablet">📟 Tablet</option>
+              <option value="Smart TV">📺 Smart TV</option>
+            </select>
+            <select class="inp" id="all-filter-status" onchange="filterAllUsers()"
+                    style="max-width:130px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 10px;font-family:var(--font-ui)">
+              <option value="">Barcha holat</option>
+              <option value="online">🟢 Online</option>
+              <option value="blocked">🚫 Bloklangan</option>
+              <option value="premium">⭐ Premium</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Foydalanuvchi</th>
+                <th>Davlat</th>
+                <th>Qurilma</th>
+                <th>Holat</th>
+                <th>Oxirgi faollik</th>
+                <th>Amallar</th>
+              </tr>
+            </thead>
+            <tbody id="all-tbody">
+              <tr class="loading-row"><td colspan="6"><span class="spinner"></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="all-pagination"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ACCOUNT MODAL
+══════════════════════════════════════════ -->
+<div class="modal-bg" id="account-modal">
+  <div class="modal account-modal">
+
+    <!-- Header -->
+    <div class="acc-header">
+      <div class="acc-big-avatar" id="am-avatar">A</div>
+      <div style="flex:1">
+        <div class="acc-name" id="am-name">—</div>
+        <div class="acc-email" id="am-email">—</div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="am-badges"></div>
+      </div>
+      <button onclick="closeAccount()"
+              style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:4px">✕</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="acc-tabs">
+      <div class="acc-tab active" onclick="switchAccTab('info')">ℹ️ Ma'lumot</div>
+      <div class="acc-tab" onclick="switchAccTab('map')">🗺️ Xarita</div>
+      <div class="acc-tab" onclick="switchAccTab('device')">📱 Qurilma</div>
+    </div>
+
+    <!-- ── INFO TAB ── -->
+    <div class="tab-panel active" id="tab-info">
+      <div class="info-g">
+
+        <div class="info-box">
+          <div class="info-lbl">B) Gmail</div>
+          <div class="info-val" id="am-gmail">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">D) Holat</div>
+          <div class="info-val" id="am-status">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">C) Ro'yxatdan o'tgan</div>
+          <div class="info-val" id="am-registered">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">E) Oxirgi faollik</div>
+          <div class="info-val" id="am-last-seen">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">G) IP manzil</div>
+          <div class="info-val" id="am-ip">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">Davlat</div>
+          <div class="info-val" id="am-country">—</div>
+        </div>
+
+        <div class="info-box" style="grid-column:1/-1">
+          <div class="info-lbl">📍 Geo joylashuv</div>
+          <div class="info-val" id="am-geo">—</div>
+          <button class="btn btn-ghost" style="margin-top:8px;font-size:.78rem"
+                  onclick="switchAccTab('map')">
+            🗺️ Xaritada ko'rish
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── MAP TAB ── -->
+    <div class="tab-panel" id="tab-map">
+      <div id="acc-map"></div>
+      <div class="map-layer-toggle">
+        <span style="font-size:.78rem;color:var(--muted);margin-right:8px">Xarita turi:</span>
+        <button class="layer-btn active" id="btn-satellite" onclick="setMapLayer('satellite')">
+          🛰️ Sun'iy yo'ldosh
+        </button>
+        <button class="layer-btn" id="btn-hybrid" onclick="setMapLayer('hybrid')">
+          🗺️ Gibrid
+        </button>
+      </div>
+    </div>
+
+    <!-- ── DEVICE TAB ── -->
+    <div class="tab-panel" id="tab-device">
+      <div class="info-g">
+
+        <div class="info-box">
+          <div class="info-lbl">A) Qurilma turi</div>
+          <div class="info-val" id="am-device-type">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">Brend</div>
+          <div class="info-val" id="am-brand">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">Model</div>
+          <div class="info-val" id="am-model">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">OS versiyasi</div>
+          <div class="info-val" id="am-os">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">App versiyasi</div>
+          <div class="info-val" id="am-app-ver">—</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-lbl">Jami tomosha</div>
+          <div class="info-val" id="am-watch">—</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Premium berish -->
+    <div style="padding:4px 24px 0">
+      <div style="font-size:.76rem;color:var(--muted);font-weight:600;margin-bottom:8px">
+        🎁 BEPUL PREMIUM BERISH:
+      </div>
+    </div>
+    <div class="prem-grid">
+      <button class="prem-btn" onclick="givePremium(7)">1 hafta</button>
+      <button class="prem-btn" onclick="givePremium(30)">1 oy</button>
+      <button class="prem-btn" onclick="givePremium(90)">3 oy</button>
+      <button class="prem-btn" onclick="givePremium(365)">1 yil</button>
+    </div>
+
+    <!-- Footer -->
+    <div class="acc-footer">
+      <button class="btn btn-danger" id="am-block-btn" onclick="toggleBlock()">
+        🚫 Bloklash
+      </button>
+      <button class="btn btn-ghost" onclick="closeAccount()" style="margin-left:auto">
+        Yopish
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// DAVLATLAR RO'YXATI — 195 ta (inglizcha, alifbo)
+// ═══════════════════════════════════════════════
+
+const ALL_COUNTRIES = [
+  {code:'AF',name:'Afghanistan'},{code:'AL',name:'Albania'},
+  {code:'DZ',name:'Algeria'},{code:'AD',name:'Andorra'},
+  {code:'AO',name:'Angola'},{code:'AG',name:'Antigua and Barbuda'},
+  {code:'AR',name:'Argentina'},{code:'AM',name:'Armenia'},
+  {code:'AU',name:'Australia'},{code:'AT',name:'Austria'},
+  {code:'AZ',name:'Azerbaijan'},{code:'BS',name:'Bahamas'},
+  {code:'BH',name:'Bahrain'},{code:'BD',name:'Bangladesh'},
+  {code:'BB',name:'Barbados'},{code:'BY',name:'Belarus'},
+  {code:'BE',name:'Belgium'},{code:'BZ',name:'Belize'},
+  {code:'BJ',name:'Benin'},{code:'BT',name:'Bhutan'},
+  {code:'BO',name:'Bolivia'},{code:'BA',name:'Bosnia and Herzegovina'},
+  {code:'BW',name:'Botswana'},{code:'BR',name:'Brazil'},
+  {code:'BN',name:'Brunei'},{code:'BG',name:'Bulgaria'},
+  {code:'BF',name:'Burkina Faso'},{code:'BI',name:'Burundi'},
+  {code:'CV',name:'Cape Verde'},{code:'KH',name:'Cambodia'},
+  {code:'CM',name:'Cameroon'},{code:'CA',name:'Canada'},
+  {code:'CF',name:'Central African Republic'},{code:'TD',name:'Chad'},
+  {code:'CL',name:'Chile'},{code:'CN',name:'China'},
+  {code:'CO',name:'Colombia'},{code:'KM',name:'Comoros'},
+  {code:'CG',name:'Congo'},{code:'CR',name:'Costa Rica'},
+  {code:'HR',name:'Croatia'},{code:'CU',name:'Cuba'},
+  {code:'CY',name:'Cyprus'},{code:'CZ',name:'Czech Republic'},
+  {code:'DK',name:'Denmark'},{code:'DJ',name:'Djibouti'},
+  {code:'DM',name:'Dominica'},{code:'DO',name:'Dominican Republic'},
+  {code:'EC',name:'Ecuador'},{code:'EG',name:'Egypt'},
+  {code:'SV',name:'El Salvador'},{code:'GQ',name:'Equatorial Guinea'},
+  {code:'ER',name:'Eritrea'},{code:'EE',name:'Estonia'},
+  {code:'SZ',name:'Eswatini'},{code:'ET',name:'Ethiopia'},
+  {code:'FJ',name:'Fiji'},{code:'FI',name:'Finland'},
+  {code:'FR',name:'France'},{code:'GA',name:'Gabon'},
+  {code:'GM',name:'Gambia'},{code:'GE',name:'Georgia'},
+  {code:'DE',name:'Germany'},{code:'GH',name:'Ghana'},
+  {code:'GR',name:'Greece'},{code:'GD',name:'Grenada'},
+  {code:'GT',name:'Guatemala'},{code:'GN',name:'Guinea'},
+  {code:'GW',name:'Guinea-Bissau'},{code:'GY',name:'Guyana'},
+  {code:'HT',name:'Haiti'},{code:'HN',name:'Honduras'},
+  {code:'HU',name:'Hungary'},{code:'IS',name:'Iceland'},
+  {code:'IN',name:'India'},{code:'ID',name:'Indonesia'},
+  {code:'IR',name:'Iran'},{code:'IQ',name:'Iraq'},
+  {code:'IE',name:'Ireland'},{code:'IL',name:'Israel'},
+  {code:'IT',name:'Italy'},{code:'JM',name:'Jamaica'},
+  {code:'JP',name:'Japan'},{code:'JO',name:'Jordan'},
+  {code:'KZ',name:'Kazakhstan'},{code:'KE',name:'Kenya'},
+  {code:'KI',name:'Kiribati'},{code:'KP',name:'North Korea'},
+  {code:'KR',name:'South Korea'},{code:'KW',name:'Kuwait'},
+  {code:'KG',name:'Kyrgyzstan'},{code:'LA',name:'Laos'},
+  {code:'LV',name:'Latvia'},{code:'LB',name:'Lebanon'},
+  {code:'LS',name:'Lesotho'},{code:'LR',name:'Liberia'},
+  {code:'LY',name:'Libya'},{code:'LI',name:'Liechtenstein'},
+  {code:'LT',name:'Lithuania'},{code:'LU',name:'Luxembourg'},
+  {code:'MG',name:'Madagascar'},{code:'MW',name:'Malawi'},
+  {code:'MY',name:'Malaysia'},{code:'MV',name:'Maldives'},
+  {code:'ML',name:'Mali'},{code:'MT',name:'Malta'},
+  {code:'MH',name:'Marshall Islands'},{code:'MR',name:'Mauritania'},
+  {code:'MU',name:'Mauritius'},{code:'MX',name:'Mexico'},
+  {code:'FM',name:'Micronesia'},{code:'MD',name:'Moldova'},
+  {code:'MC',name:'Monaco'},{code:'MN',name:'Mongolia'},
+  {code:'ME',name:'Montenegro'},{code:'MA',name:'Morocco'},
+  {code:'MZ',name:'Mozambique'},{code:'MM',name:'Myanmar'},
+  {code:'NA',name:'Namibia'},{code:'NR',name:'Nauru'},
+  {code:'NP',name:'Nepal'},{code:'NL',name:'Netherlands'},
+  {code:'NZ',name:'New Zealand'},{code:'NI',name:'Nicaragua'},
+  {code:'NE',name:'Niger'},{code:'NG',name:'Nigeria'},
+  {code:'MK',name:'North Macedonia'},{code:'NO',name:'Norway'},
+  {code:'OM',name:'Oman'},{code:'PK',name:'Pakistan'},
+  {code:'PW',name:'Palau'},{code:'PS',name:'Palestine'},
+  {code:'PA',name:'Panama'},{code:'PG',name:'Papua New Guinea'},
+  {code:'PY',name:'Paraguay'},{code:'PE',name:'Peru'},
+  {code:'PH',name:'Philippines'},{code:'PL',name:'Poland'},
+  {code:'PT',name:'Portugal'},{code:'QA',name:'Qatar'},
+  {code:'RO',name:'Romania'},{code:'RU',name:'Russia'},
+  {code:'RW',name:'Rwanda'},{code:'SA',name:'Saudi Arabia'},
+  {code:'SN',name:'Senegal'},{code:'RS',name:'Serbia'},
+  {code:'SC',name:'Seychelles'},{code:'SL',name:'Sierra Leone'},
+  {code:'SG',name:'Singapore'},{code:'SK',name:'Slovakia'},
+  {code:'SI',name:'Slovenia'},{code:'SB',name:'Solomon Islands'},
+  {code:'SO',name:'Somalia'},{code:'ZA',name:'South Africa'},
+  {code:'SS',name:'South Sudan'},{code:'ES',name:'Spain'},
+  {code:'LK',name:'Sri Lanka'},{code:'SD',name:'Sudan'},
+  {code:'SR',name:'Suriname'},{code:'SE',name:'Sweden'},
+  {code:'CH',name:'Switzerland'},{code:'SY',name:'Syria'},
+  {code:'TW',name:'Taiwan'},{code:'TJ',name:'Tajikistan'},
+  {code:'TZ',name:'Tanzania'},{code:'TH',name:'Thailand'},
+  {code:'TL',name:'Timor-Leste'},{code:'TG',name:'Togo'},
+  {code:'TO',name:'Tonga'},{code:'TT',name:'Trinidad and Tobago'},
+  {code:'TN',name:'Tunisia'},{code:'TR',name:'Turkey'},
+  {code:'TM',name:'Turkmenistan'},{code:'TV',name:'Tuvalu'},
+  {code:'UG',name:'Uganda'},{code:'UA',name:'Ukraine'},
+  {code:'AE',name:'United Arab Emirates'},{code:'GB',name:'United Kingdom'},
+  {code:'US',name:'United States'},{code:'UY',name:'Uruguay'},
+  {code:'UZ',name:'Uzbekistan'},{code:'VU',name:'Vanuatu'},
+  {code:'VE',name:'Venezuela'},{code:'VN',name:'Vietnam'},
+  {code:'YE',name:'Yemen'},{code:'ZM',name:'Zambia'},
+  {code:'ZW',name:'Zimbabwe'},
+].sort((a,b) => a.name.localeCompare(b.name));
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+
+let allUsers       = [];
+let countryStats   = {};     // {code: count}
+let currentCountry = null;   // {code, name}
+let cuUsers        = [];     // davlat foydalanuvchilari
+let cuFiltered     = [];
+let cuPage         = 1;
+const PAGE_SIZE    = 20;
+let allFiltered    = [];
+let allPage        = 1;
+let currentUser    = null;   // modal da ochilgan user
+let leafletMap     = null;
+let satelliteLayer = null;
+let hybridLayer    = null;
+let currentMapLayer= 'satellite';
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+
+async function loadAll() {
+  try {
+    allUsers = await sbFetch(
+      'user_profiles?select=*&order=last_seen_at.desc&limit=5000'
+    ) || [];
+
+    buildCountryStats();
+    updateStats();
+    renderCountryList();
+    allFiltered = [...allUsers];
+    renderAllTable();
+  } catch(e) {
+    document.getElementById('country-list').innerHTML =
+      `<div style="color:var(--red);grid-column:1/-1">Xatolik: ${e.message}</div>`;
+  }
+}
+
+function buildCountryStats() {
+  countryStats = {};
+  allUsers.forEach(u => {
+    const c = (u.country || 'XX').toUpperCase();
+    countryStats[c] = (countryStats[c] || 0) + 1;
+  });
+}
+
+function updateStats() {
+  const online   = allUsers.filter(u => u.is_online).length;
+  const premium  = allUsers.filter(u => u.premium_until &&
+    new Date(u.premium_until) > new Date()).length;
+  const blocked  = allUsers.filter(u => u.is_blocked).length;
+  const countries = Object.keys(countryStats).length;
+
+  document.getElementById('st-total').textContent    = allUsers.length;
+  document.getElementById('st-online').textContent   = online;
+  document.getElementById('st-premium').textContent  = premium;
+  document.getElementById('st-blocked').textContent  = blocked;
+  document.getElementById('st-countries').textContent= countries;
+}
+
+// ═══════════════════════════════════════════════
+// VIEW SWITCH
+// ═══════════════════════════════════════════════
+
+function switchView(view) {
+  document.getElementById('pane-countries').style.display    = view==='countries' ? 'block' : 'none';
+  document.getElementById('pane-country-users').style.display= 'none';
+  document.getElementById('pane-all').style.display          = view==='all' ? 'block' : 'none';
+  document.getElementById('btn-countries').classList.toggle('active', view==='countries');
+  document.getElementById('btn-all').classList.toggle('active', view==='all');
+  document.getElementById('topbar-sub').textContent =
+    view==='countries' ? 'Davlatlar bo\'yicha' : 'Barcha foydalanuvchilar';
+}
+
+function refreshView() {
+  loadAll();
+}
+
+// ═══════════════════════════════════════════════
+// DAVLATLAR RO'YXATI
+// ═══════════════════════════════════════════════
+
+function renderCountryList(filter='') {
+  const list = document.getElementById('country-list');
+  const q    = filter.toLowerCase();
+
+  // Faqat foydalanuvchi bor davlatlar + alifbo tartib
+  const active = ALL_COUNTRIES.filter(c => {
+    const count = countryStats[c.code.toUpperCase()] || 0;
+    return count > 0 && (!q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
+  });
+
+  if (!active.length) {
+    list.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Topilmadi</div>';
+    return;
+  }
+
+  list.innerHTML = active.map(c => {
+    const count = countryStats[c.code.toUpperCase()] || 0;
+    return `
+      <div class="country-row" onclick="openCountry('${c.code}','${c.name}')">
+        <img class="country-flag-img"
+             src="https://flagcdn.com/24x18/${c.code.toLowerCase()}.png"
+             alt="${c.code}"
+             onerror="this.style.display='none'"/>
+        <span class="country-name">${esc(c.name)}</span>
+        <span class="country-count">${count}</span>
+      </div>`;
+  }).join('');
+}
+
+function filterCountries() {
+  renderCountryList(document.getElementById('country-search').value);
+}
+
+// ═══════════════════════════════════════════════
+// DAVLAT FOYDALANUVCHILARI
+// ═══════════════════════════════════════════════
+
+function openCountry(code, name) {
+  currentCountry = {code, name};
+  cuPage = 1;
+
+  document.getElementById('cu-title').textContent    = `🌍 ${name}`;
+  document.getElementById('cu-subtitle').textContent =
+    `${countryStats[code.toUpperCase()]||0} ta foydalanuvchi`;
+  document.getElementById('cu-header').textContent   = `${name} foydalanuvchilari`;
+
+  document.getElementById('pane-countries').style.display    = 'none';
+  document.getElementById('pane-country-users').style.display= 'block';
+  document.getElementById('topbar-sub').textContent = name;
+
+  cuUsers = allUsers.filter(u => (u.country||'').toUpperCase() === code.toUpperCase());
+  cuFiltered = [...cuUsers];
+  renderCuTable();
+}
+
+function backToCountries() {
+  document.getElementById('pane-country-users').style.display = 'none';
+  document.getElementById('pane-countries').style.display     = 'block';
+  document.getElementById('topbar-sub').textContent = "Davlatlar bo'yicha";
+  currentCountry = null;
+}
+
+function filterCountryUsers() {
+  const q = document.getElementById('cu-search').value.toLowerCase();
+  cuFiltered = cuUsers.filter(u =>
+    !q ||
+    (u.display_name||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q)
+  );
+  cuPage = 1;
+  renderCuTable();
+}
+
+function renderCuTable() {
+  const tbody = document.getElementById('cu-tbody');
+  const total = cuFiltered.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = (cuPage-1) * PAGE_SIZE;
+  const slice = cuFiltered.slice(start, start + PAGE_SIZE);
+
+  if (!slice.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Foydalanuvchi topilmadi</td></tr>';
+  } else {
+    tbody.innerHTML = slice.map(u => userRow(u, false)).join('');
+  }
+
+  renderPagination('cu-pagination', cuPage, pages, p => { cuPage=p; renderCuTable(); });
+}
+
+// ═══════════════════════════════════════════════
+// BARCHA FOYDALANUVCHILAR
+// ═══════════════════════════════════════════════
+
+function filterAllUsers() {
+  const q      = document.getElementById('all-search').value.toLowerCase();
+  const device = document.getElementById('all-filter-device').value;
+  const status = document.getElementById('all-filter-status').value;
+
+  allFiltered = allUsers.filter(u => {
+    const matchQ  = !q || (u.display_name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q);
+    const matchD  = !device || u.device_type === device;
+    const matchS  = !status ||
+      (status==='online'   && u.is_online) ||
+      (status==='blocked'  && u.is_blocked) ||
+      (status==='premium'  && u.premium_until && new Date(u.premium_until)>new Date());
+    return matchQ && matchD && matchS;
+  });
+  allPage = 1;
+  renderAllTable();
+}
+
+function renderAllTable() {
+  const tbody = document.getElementById('all-tbody');
+  const total = allFiltered.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const start = (allPage-1) * PAGE_SIZE;
+  const slice = allFiltered.slice(start, start + PAGE_SIZE);
+
+  if (!slice.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Foydalanuvchi topilmadi</td></tr>';
+  } else {
+    tbody.innerHTML = slice.map(u => userRow(u, true)).join('');
+  }
+
+  renderPagination('all-pagination', allPage, pages, p => { allPage=p; renderAllTable(); });
+}
+
+// ═══════════════════════════════════════════════
+// USER ROW HTML
+// ═══════════════════════════════════════════════
+
+function userRow(u, showCountry) {
+  const initial  = (u.display_name||u.email||'U')[0].toUpperCase();
+  const isOnline = u.is_online;
+  const isBlocked= u.is_blocked;
+  const isPremium= u.premium_until && new Date(u.premium_until)>new Date();
+  const lastSeen = timeAgo(u.last_seen_at);
+  const registered = formatDateShort(u.first_seen_at);
+
+  const deviceIcon = u.device_type==='Smart TV' ? '📺' :
+                     u.device_type==='Tablet'   ? '📟' : '📱';
+
+  const countryCell = showCountry ? `
+    <td style="font-size:.82rem">
+      <img src="https://flagcdn.com/16x12/${(u.country||'xx').toLowerCase()}.png"
+           style="border-radius:2px;margin-right:4px;vertical-align:middle"
+           onerror="this.style.display='none'"/>
+      ${esc(u.country||'—')}
+    </td>` : '';
+
+  return `
+    <tr onclick='openAccount(${JSON.stringify(JSON.stringify(u))})' style="cursor:pointer">
+      <td>
+        <div class="user-name-cell">
+          <div class="user-avatar-sm">${initial}</div>
+          <div>
+            <div style="font-weight:600;font-size:.85rem">${esc(u.display_name||'—')}</div>
+            <div style="font-size:.72rem;color:var(--muted)">${esc(u.email||'—')}</div>
+          </div>
+        </div>
+      </td>
+      ${countryCell}
+      <td style="font-size:.82rem">${deviceIcon} ${esc(u.device_type||'—')}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <div class="online-dot ${isOnline?'dot-online':'dot-offline'}"></div>
+          <span style="font-size:.78rem;color:${isOnline?'var(--green)':'var(--muted)'}">
+            ${isOnline?'Online':'Offline'}
+          </span>
+          ${isBlocked?'<span class="badge badge-inactive" style="font-size:.65rem">🚫 Bloklangan</span>':''}
+          ${isPremium?'<span class="badge badge-popular" style="font-size:.65rem">⭐ Premium</span>':''}
+        </div>
+      </td>
+      <td style="font-size:.78rem;color:var(--muted)">${lastSeen}</td>
+      ${!showCountry ? `<td style="font-size:.78rem;color:var(--muted)">${registered}</td>` : ''}
+      <td>
+        <div class="actions-cell">
+          <button class="icon-btn" title="Ma'lumot"
+                  onclick='event.stopPropagation();openAccount(${JSON.stringify(JSON.stringify(u))})'>
+            👤
+          </button>
+        </div>
+      </td>
+    </tr>`;
+}
+
+// ═══════════════════════════════════════════════
+// PAGINATION
+// ═══════════════════════════════════════════════
+
+function renderPagination(containerId, currentPage, totalPages, onPageClick) {
+  const el = document.getElementById(containerId);
+  if (totalPages <= 1) { el.innerHTML=''; return; }
+
+  let html = `
+    <button class="page-btn" ${currentPage===1?'disabled':''} onclick="(${onPageClick})(${currentPage-1})">←</button>
+    <span class="page-nav" style="color:var(--muted);font-size:.8rem">
+      ${currentPage} / ${totalPages}
+    </span>`;
+
+  // Page buttons — max 5 ta
+  const start = Math.max(1, currentPage-2);
+  const end   = Math.min(totalPages, start+4);
+  for (let p=start; p<=end; p++) {
+    html += `<button class="page-btn ${p===currentPage?'active':''}"
+                     onclick="(${onPageClick})(${p})">${p}</button>`;
+  }
+
+  html += `<button class="page-btn" ${currentPage===totalPages?'disabled':''}
+                   onclick="(${onPageClick})(${currentPage+1})">→</button>`;
+
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════
+// ACCOUNT MODAL
+// ═══════════════════════════════════════════════
+
+function openAccount(jsonStr) {
+  const u = JSON.parse(jsonStr);
+  currentUser = u;
+
+  const initial   = (u.display_name||u.email||'U')[0].toUpperCase();
+  const isOnline  = u.is_online;
+  const isBlocked = u.is_blocked;
+  const isPremium = u.premium_until && new Date(u.premium_until) > new Date();
+
+  document.getElementById('am-avatar').textContent = initial;
+  document.getElementById('am-name').textContent   = u.display_name || '—';
+  document.getElementById('am-email').textContent  = u.email || '—';
+
+  // Badges
+  const badges = document.getElementById('am-badges');
+  badges.innerHTML = [
+    isOnline  ? '<span class="badge badge-active">🟢 Online</span>'     : '<span class="badge badge-inactive">⚫ Offline</span>',
+    isPremium ? '<span class="badge badge-popular">⭐ Premium</span>'    : '',
+    isBlocked ? '<span class="badge badge-inactive">🚫 Bloklangan</span>': '',
+  ].join('');
+
+  // Info tab
+  document.getElementById('am-gmail').textContent       = u.email || '—';
+  document.getElementById('am-status').innerHTML        = isOnline
+    ? '<span style="color:var(--green)">🟢 Online</span>'
+    : '<span style="color:var(--muted)">⚫ Offline</span>';
+  document.getElementById('am-registered').textContent  = formatDate(u.first_seen_at);
+  document.getElementById('am-last-seen').textContent   = timeAgo(u.last_seen_at);
+  document.getElementById('am-ip').textContent          = u.ip_address || '—';
+  document.getElementById('am-country').textContent     = u.country || '—';
+
+  const hasCoords = u.latitude && u.longitude;
+  document.getElementById('am-geo').textContent = hasCoords
+    ? `${u.latitude?.toFixed(4)}, ${u.longitude?.toFixed(4)}`
+    : '— (koordinata mavjud emas)';
+
+  // Device tab
+  const deviceIcon = u.device_type==='Smart TV' ? '📺 Smart TV' :
+                     u.device_type==='Tablet'   ? '📟 Tablet'   : '📱 Phone';
+  document.getElementById('am-device-type').textContent = deviceIcon;
+  document.getElementById('am-brand').textContent       = u.device_brand  || '—';
+  document.getElementById('am-model').textContent       = u.device_model  || '—';
+  document.getElementById('am-os').textContent          = u.os_version    || '—';
+  document.getElementById('am-app-ver').textContent     = u.app_version   || '—';
+  document.getElementById('am-watch').textContent       = u.total_watch_minutes
+    ? formatMinutes(u.total_watch_minutes) : '—';
+
+  // Block button
+  document.getElementById('am-block-btn').textContent =
+    isBlocked ? '✅ Blokni ochish' : '🚫 Bloklash';
+  document.getElementById('am-block-btn').style.background =
+    isBlocked ? 'rgba(61,220,151,.15)' : '';
+
+  // Tab reset
+  switchAccTab('info');
+
+  document.getElementById('account-modal').classList.add('show');
+
+  // Xaritani keyinroq init qilamiz (tab ochilganda)
+}
+
+function closeAccount() {
+  document.getElementById('account-modal').classList.remove('show');
+  currentUser = null;
+  if (leafletMap) { leafletMap.remove(); leafletMap=null; }
+}
+
+// ═══════════════════════════════════════════════
+// ACCOUNT TABS
+// ═══════════════════════════════════════════════
+
+function switchAccTab(tab) {
+  document.querySelectorAll('.acc-tab').forEach((t,i) => {
+    const tabs = ['info','map','device'];
+    t.classList.toggle('active', tabs[i]===tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+
+  if (tab==='map') initMap();
+}
+
+// ═══════════════════════════════════════════════
+// LEAFLET XARITA
+// ═══════════════════════════════════════════════
+
+function initMap() {
+  if (leafletMap) { leafletMap.remove(); leafletMap=null; }
+
+  const u   = currentUser;
+  const lat = u?.latitude  || 41.2995;   // default: Toshkent
+  const lng = u?.longitude || 69.2401;
+  const hasCoords = u?.latitude && u?.longitude;
+
+  leafletMap = L.map('acc-map', { zoomControl:true }).setView([lat, lng], hasCoords ? 13 : 5);
+
+  // Qatlam 1: Esri ArcGIS Sun'iy yo'ldosh (taglik)
+  const esriSatellite = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution:'© Esri', maxZoom:19 }
+  );
+
+  // Qatlam 2: Google Labels (shaffof ustki)
+  const googleLabels = L.tileLayer(
+    'http://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}',
+    { subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, opacity:1 }
+  );
+
+  // Satellite = Esri + Labels birlashtirish
+  satelliteLayer = L.layerGroup([esriSatellite, googleLabels]);
+
+  // Google Hybrid (tayyor)
+  hybridLayer = L.tileLayer(
+    'http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    { subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, attribution:'© Google' }
+  );
+
+  // Boshlang'ich: Satellite
+  satelliteLayer.addTo(leafletMap);
+  currentMapLayer = 'satellite';
+
+  // Marker
+  if (hasCoords) {
+    const icon = L.divIcon({
+      html:`<div style="
+        width:36px;height:36px;border-radius:50%;
+        background:var(--accent,#6c7bff);
+        border:3px solid #fff;
+        display:flex;align-items:center;justify-content:center;
+        font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,.4);
+      ">👤</div>`,
+      iconSize:[36,36], iconAnchor:[18,18],
+    });
+
+    L.marker([lat,lng], {icon})
+      .addTo(leafletMap)
+      .bindPopup(`
+        <b>${esc(u.display_name||'Foydalanuvchi')}</b><br/>
+        📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}<br/>
+        🌍 ${u.country||'—'}<br/>
+        🌐 ${u.ip_address||'—'}
+      `)
+      .openPopup();
+  } else {
+    L.popup()
+      .setLatLng([lat,lng])
+      .setContent('📍 Aniq joylashuv ma\'lumoti mavjud emas')
+      .openOn(leafletMap);
+  }
+
+  // Resize fix
+  setTimeout(() => leafletMap.invalidateSize(), 300);
+}
+
+function setMapLayer(type) {
+  if (!leafletMap) return;
+  if (type==='satellite') {
+    leafletMap.removeLayer(hybridLayer);
+    satelliteLayer.addTo(leafletMap);
+    currentMapLayer='satellite';
+  } else {
+    leafletMap.removeLayer(satelliteLayer);
+    hybridLayer.addTo(leafletMap);
+    currentMapLayer='hybrid';
+  }
+  document.getElementById('btn-satellite').classList.toggle('active', type==='satellite');
+  document.getElementById('btn-hybrid').classList.toggle('active', type==='hybrid');
+}
+
+// ═══════════════════════════════════════════════
+// PREMIUM BERISH
+// ═══════════════════════════════════════════════
+
+async function givePremium(days) {
+  if (!currentUser) return;
+  if (!confirm(`${currentUser.display_name||currentUser.email} ga ${days} kunlik premium berilsinmi?`)) return;
+
+  try {
+    const until = new Date();
+    until.setDate(until.getDate() + days);
+
+    await sbFetch('subscriptions', {
+      method:'POST',
+      body: JSON.stringify({
+        firebase_uid : currentUser.user_uid,
+        email        : currentUser.email,
+        plan_name    : `Admin tomonidan ${days} kun`,
+        duration_days: days,
+        price_paid   : 0,
+        currency     : 'USD',
+        starts_at    : new Date().toISOString(),
+        expires_at   : until.toISOString(),
+        is_active    : true,
+      }),
+    });
+
+    // user_profiles premium_until yangilash
+    await sbFetch(`user_profiles?user_uid=eq.${currentUser.user_uid}`, {
+      method: 'PATCH',
+      body  : JSON.stringify({ premium_until: until.toISOString() }),
+    });
+
+    showToast(`✅ ${days} kunlik premium berildi!`);
+    loadAll();
+  } catch(e) {
+    showToast('❌ Xatolik: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// BLOKLASH
+// ═══════════════════════════════════════════════
+
+async function toggleBlock() {
+  if (!currentUser) return;
+  const isBlocked = currentUser.is_blocked;
+  const action = isBlocked ? 'blokdan chiqarilsinmi' : 'bloklansimi';
+  if (!confirm(`${currentUser.display_name||currentUser.email} ${action}?`)) return;
+
+  try {
+    await sbFetch(`user_profiles?user_uid=eq.${currentUser.user_uid}`, {
+      method: 'PATCH',
+      body  : JSON.stringify({ is_blocked: !isBlocked }),
+    });
+
+    showToast(isBlocked ? '✅ Foydalanuvchi blokdan chiqarildi!' : '🚫 Foydalanuvchi bloklandi!');
+    closeAccount();
+    loadAll();
+  } catch(e) {
+    showToast('❌ Xatolik: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '—';
+  const sec = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (sec < 60)   return `${sec} soniya oldin`;
+  if (sec < 3600) return `${Math.floor(sec/60)} daqiqa oldin`;
+  if (sec < 86400)return `${Math.floor(sec/3600)} soat oldin`;
+  return `${Math.floor(sec/86400)} kun oldin`;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleString('uz-UZ', {
+    day:'2-digit', month:'long', year:'numeric',
+    hour:'2-digit', minute:'2-digit',
+  });
+}
+
+function formatDateShort(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('uz-UZ', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+  });
+}
+
+function formatMinutes(mins) {
+  if (mins < 60) return `${mins} daqiqa`;
+  const h = Math.floor(mins/60), m = mins%60;
+  return `${h} soat ${m>0?m+' daqiqa':''}`;
+}
+
+function showToast(msg) {
+  let toast = document.getElementById('admin-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'admin-toast';
+    toast.style.cssText = `
+      position:fixed;bottom:28px;right:28px;z-index:9999;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:10px;padding:14px 20px;font-size:.85rem;color:var(--text);
+      box-shadow:0 8px 32px rgba(0,0,0,.4);transition:opacity .3s;opacity:0;max-width:320px;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity='1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>{ toast.style.opacity='0'; }, 3500);
+}
+
+// Modal tashqariga bosilsa yopish
+document.getElementById('account-modal').addEventListener('click', e=>{
+  if (e.target===e.currentTarget) closeAccount();
+});
+
+// INIT
+document.addEventListener('DOMContentLoaded', loadAll);
+</script>
+</body>
+</html>
