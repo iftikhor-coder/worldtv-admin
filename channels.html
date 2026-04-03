@@ -45,38 +45,7 @@
   </style>
 </head>
 <body>
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-icon">W</div>
-    <div class="logo-text">World<span>TV</span></div>
-    <span class="logo-badge">Admin</span>
-  </div>
-  <div class="nav-section">
-    <div class="nav-section-label">Asosiy</div>
-    <a class="nav-item" href="index.html"><span class="icon">📊</span> Dashboard</a>
-    <a class="nav-item" href="#"><span class="icon">👥</span> Foydalanuvchilar</a>
-    <a class="nav-item" href="channels.html"><span class="icon">📺</span> Kanallar</a>
-    <a class="nav-item" href="#"><span class="icon">📈</span> Analytics</a>
-  </div>
-  <div class="nav-section">
-    <div class="nav-section-label">Moliya</div>
-    <a class="nav-item" href="subscription-plans.html"><span class="icon">💳</span> Obuna narxlari</a>
-    <a class="nav-item" href="#"><span class="icon">📊</span> Daromadlar</a>
-  </div>
-  <div class="nav-section">
-    <div class="nav-section-label">Tizim</div>
-    <a class="nav-item" href="#"><span class="icon">🔔</span> Bildirishnomalar</a>
-    <a class="nav-item" href="#"><span class="icon">⚙️</span> Sozlamalar</a>
-    <a class="nav-item" href="#"><span class="icon">📝</span> Loglar</a>
-  </div>
-  <div class="sidebar-footer">
-    <div class="admin-card">
-      <div class="admin-avatar">A</div>
-      <div><div class="admin-name">Admin</div><div class="admin-role">Super Administrator</div></div>
-    </div>
-    <button class="logout-btn" onclick="adminLogout()">🚪 Chiqish</button>
-  </div>
-</aside>
+<aside class="sidebar" id="sidebar"></aside>
 
 <div class="main">
   <div class="topbar">
@@ -141,6 +110,11 @@
             <div class="checkbox-row"><input type="checkbox" id="f-live" checked/><label for="f-live">📡 Jonli efir (LIVE)</label></div>
             <div class="checkbox-row"><input type="checkbox" id="f-new"/><label for="f-new">🆕 NEW badge ko'rinsin</label></div>
             <div class="checkbox-row"><input type="checkbox" id="f-premium"/><label for="f-premium">⭐ Premium kanal</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="f-catchup"/><label for="f-catchup">⏮️ Catch-up (24h DVR)</label></div>
+          </div>
+          <div class="form-group full">
+            <label>Catch-up URL (ixtiyoriy)</label>
+            <input class="inp" id="f-catchup-source" placeholder="https://example.com/catchup/{id}/{start}/{duration}.m3u8"/>
           </div>
           <div class="form-group full">
             <label>Logo URL</label>
@@ -243,9 +217,11 @@
         <div class="checkbox-row"><input type="checkbox" id="e-live"/><label for="e-live">📡 LIVE</label></div>
         <div class="checkbox-row"><input type="checkbox" id="e-new"/><label for="e-new">🆕 NEW badge</label></div>
         <div class="checkbox-row"><input type="checkbox" id="e-premium"/><label for="e-premium">⭐ Premium</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="e-catchup"/><label for="e-catchup">⏮️ Catch-up (24h DVR)</label></div>
       </div>
       <div class="form-group full"><label>Logo URL</label><input class="inp" id="e-logo"/></div>
       <div class="form-group full"><label>Stream URL</label><input class="inp" id="e-stream"/></div>
+      <div class="form-group full"><label>Catch-up URL (ixtiyoriy)</label><input class="inp" id="e-catchup-source" placeholder="https://example.com/catchup/{id}/{start}/{duration}.m3u8"/></div>
     </div>
     <div class="btn-row">
       <button class="btn btn-success" onclick="saveChannel()">💾 Saqlash</button>
@@ -366,6 +342,7 @@ function renderTable(){
         ${ch.is_live?'<span class="badge badge-active">📡 LIVE</span>':''}
         ${ch.is_premium?'<span class="badge badge-popular">⭐ Premium</span>':''}
         ${ch.is_new?'<span class="badge" style="background:rgba(255,95,109,.12);color:var(--red)">🆕 NEW</span>':''}
+        ${ch.has_catchup?'<span class="badge" style="background:rgba(108,123,255,.12);color:var(--accent)">⏮️ DVR</span>':''}
         ${!ch.is_live&&!ch.is_premium&&!ch.is_new?'<span class="badge badge-inactive">Oddiy</span>':''}
       </div></td>
       <td><div class="actions-cell">
@@ -413,6 +390,8 @@ async function addChannel(){
       is_new:document.getElementById('f-new').checked,
       is_premium:document.getElementById('f-premium').checked,
       sort_order:parseInt(document.getElementById('f-sort').value)||0,
+      has_catchup:document.getElementById('f-catchup').checked,
+      catchup_source:document.getElementById('f-catchup-source').value.trim(),
     })});
     showMsg('add-msg',`✓ "${name}" kanali muvaffaqiyatli qo'shildi!`);
     clearAddForm(); loadChannels();
@@ -428,6 +407,8 @@ function clearAddForm(){
   document.getElementById('f-live').checked=true;
   document.getElementById('f-new').checked=false;
   document.getElementById('f-premium').checked=false;
+  document.getElementById('f-catchup').checked=false;
+  document.getElementById('f-catchup-source').value='';
   document.getElementById('logo-preview').style.display='none';
   document.getElementById('stream-test-result').textContent='';
   pickCountry('add',null);
@@ -460,6 +441,8 @@ function openEdit(js){
   document.getElementById('e-live').checked=ch.is_live;
   document.getElementById('e-new').checked=ch.is_new;
   document.getElementById('e-premium').checked=ch.is_premium;
+  document.getElementById('e-catchup').checked=ch.has_catchup||false;
+  document.getElementById('e-catchup-source').value=ch.catchup_source||'';
   const cats=Array.isArray(ch.categories)?ch.categories:[];
   document.getElementById('e-category').value=cats[0]||'';
   pickCountry('edit',ch.country||null);
@@ -485,6 +468,8 @@ async function saveChannel(){
       is_live:document.getElementById('e-live').checked,
       is_new:document.getElementById('e-new').checked,
       is_premium:document.getElementById('e-premium').checked,
+      has_catchup:document.getElementById('e-catchup').checked,
+      catchup_source:document.getElementById('e-catchup-source').value.trim(),
       country,country_flag:ctObj?ctObj.flag:'🌍',
       categories:cat?[cat]:[],
     })});
