@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Oracle Server
-        run: curl -s http://213.35.119.223 || true
+        run: curl -s http://213.35.119.223:8080 || true
