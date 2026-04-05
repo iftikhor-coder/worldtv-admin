@@ -1,13 +1,13 @@
-name: Supabase Keep Alive
+name: Two-Way Server Ping
 
 on:
   schedule:
-    - cron: '0 0 */3 * *'
+    - cron: '0 */6 * * *' # Har 6 soatda ishlaydi
   workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase
-        run: curl -I https://zazmjpbblmhxtuvsxpkv.supabase.co
+      - name: Ping Oracle Server
+        run: curl -s http://213.35.119.223 || true
