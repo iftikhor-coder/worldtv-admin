@@ -2,7 +2,7 @@ name: Two-Way Server Ping
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # Har 6 soatda ishlaydi
+    - cron: '0 0 */2 * *' # Har 6 soatda ishlaydi
   workflow_dispatch:
 
 jobs:
